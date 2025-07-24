@@ -67,11 +67,15 @@ data = {
 
 df = pd.DataFrame(data)
 
-# --- SIDEBAR ---
-st.sidebar.header("Deal Settings")
-product_choice = st.sidebar.selectbox("Select Product Type", ["PCP", "HP", "LP"])
-deal_amount = st.sidebar.number_input("Deal Amount (£):", min_value=0, max_value=500000, value=25000, step=500)
-show_least_fav = st.sidebar.checkbox("Include least-favorite lenders", value=False)
+# --- TOP INPUTS (MOBILE-FRIENDLY) ---
+st.title("Saxton4x4 Lender Commission Tool")
+col1, col2, col3 = st.columns([1,1,1])
+with col1:
+    product_choice = st.selectbox("Product", ["PCP", "HP", "LP"])
+with col2:
+    deal_amount = st.number_input("Deal Amount (£):", min_value=0, max_value=500000, value=25000, step=500)
+with col3:
+    show_least_fav = st.checkbox("Include least-favorite lenders", value=False)
 
 # Filter lenders by product
 df = df[df["Products"].str.contains(product_choice)]
@@ -104,16 +108,16 @@ ranked = calc_df.groupby("Lender")["Commission (£)"].max().sort_values(ascendin
 tab1, tab2, tab3 = st.tabs(["Lender Comparison", "Commission Calculator", "Best Lender"])
 
 with tab1:
-    st.title("Lender Comparison")
+    st.subheader("Lender Comparison")
     st.dataframe(df, use_container_width=True)
 
 with tab2:
-    st.title("Commission Calculator")
+    st.subheader("Commission Calculator")
     st.dataframe(calc_df.sort_values(by="Commission (£)", ascending=False), use_container_width=True)
     st.download_button("Download as CSV", calc_df.to_csv(index=False).encode(), "commissions.csv")
 
 with tab3:
-    st.title("Best Lender Recommendation")
+    st.subheader("Best Lender Recommendation")
     st.write("### Top 3 Lenders by Commission")
     top3 = ranked.head(3)
     top3['Rank'] = ["🥇 1st","🥈 2nd","🥉 3rd"]

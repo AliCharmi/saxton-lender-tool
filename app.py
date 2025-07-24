@@ -2,8 +2,34 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="Saxton4x4 Lender Commission Tool", layout="wide")
+# --- PAGE CONFIG & THEME ---
+st.set_page_config(
+    page_title="Saxton4x4 Lender Commission Tool",
+    page_icon="💰",
+    layout="wide"
+)
+
+# --- CUSTOM STYLING ---
+st.markdown("""
+    <style>
+    .stApp {background-color: #f8f9fa; font-family: 'Arial', sans-serif;}
+    h1, h2, h3 {color: #1e3d59;}
+    .stTabs [role="tablist"] > div {font-size: 18px !important; font-weight: bold !important; color: #1e3d59 !important;}
+    div.stButton > button {
+        background-color: #1e3d59; color: white; border-radius: 8px; height: 50px; font-size: 18px;
+    }
+    div.stButton > button:hover {background-color: #27496d;}
+    .stNumberInput input, .stSelectbox div {font-size: 18px !important;}
+    .card {
+        background-color:white; padding:20px; border-radius:10px;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+        margin-bottom:20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- HEADER ---
+st.markdown("<h1 style='text-align:center;'>Saxton4x4 Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- DATASET ---
 data = {
@@ -64,11 +90,9 @@ data = {
                  True, True,
                  True]
 }
-
 df = pd.DataFrame(data)
 
-# --- TOP INPUTS (MOBILE-FRIENDLY) ---
-st.title("Saxton4x4 Lender Commission Tool")
+# --- TOP FILTERS (MOBILE-FRIENDLY) ---
 col1, col2, col3 = st.columns([1,1,1])
 with col1:
     product_choice = st.selectbox("Product", ["PCP", "HP", "LP"])
@@ -77,7 +101,7 @@ with col2:
 with col3:
     show_least_fav = st.checkbox("Include least-favorite lenders", value=False)
 
-# Filter lenders by product
+# Filter lenders
 df = df[df["Products"].str.contains(product_choice)]
 if not show_least_fav:
     df = df[df["Favorite"] == True]
@@ -108,21 +132,27 @@ ranked = calc_df.groupby("Lender")["Commission (£)"].max().sort_values(ascendin
 tab1, tab2, tab3 = st.tabs(["Lender Comparison", "Commission Calculator", "Best Lender"])
 
 with tab1:
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Lender Comparison")
     st.dataframe(df, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with tab2:
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Commission Calculator")
     st.dataframe(calc_df.sort_values(by="Commission (£)", ascending=False), use_container_width=True)
     st.download_button("Download as CSV", calc_df.to_csv(index=False).encode(), "commissions.csv")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with tab3:
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Best Lender Recommendation")
-    st.write("### Top 3 Lenders by Commission")
     top3 = ranked.head(3)
     top3['Rank'] = ["🥇 1st","🥈 2nd","🥉 3rd"]
     st.dataframe(top3, use_container_width=True)
     if product_choice == "PCP":
         st.info("Zopa PCP is prioritized — review this first for potential better balloons than Santander.")
     fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission by Lender", text_auto=True)
+    fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)

@@ -10,18 +10,11 @@ st.markdown("""
     <style>
     .stApp {background-color: #f8f9fa; font-family: 'Arial', sans-serif;}
     h1 {color: #1e3d59; text-align: center; margin-bottom: 10px;}
-    .input-card {
-        background-color: #ffffff; padding: 20px; border-radius: 10px;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
-    }
-    .stat-card {
-        padding: 20px; border-radius: 10px; color: #1e3d59;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-        font-size: 20px; font-weight: bold; margin-bottom: 15px;
-    }
-    .best {background-color: #e8f9f0;}
-    .apr {background-color: #e8f1fb;}
-    .count {background-color: #f5e8fb;}
+    .input-card {background-color: #ffffff; padding: 20px; border-radius: 10px;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
+    .stat-card {padding: 20px; border-radius: 10px; color: #1e3d59;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.1); font-size: 20px; font-weight: bold; margin-bottom: 15px;}
+    .best {background-color: #e8f9f0;} .apr {background-color: #e8f1fb;} .count {background-color: #f5e8fb;}
     .label {font-size:16px; font-weight: normal; color: #555;}
     </style>
 """, unsafe_allow_html=True)
@@ -95,13 +88,12 @@ col1, col2, col3 = st.columns([1,1,1])
 with col1:
     deal_amount = st.number_input("Advance Amount (£)", min_value=0, max_value=500000, value=30000, step=500)
 with col2:
-    view_mode = st.selectbox("View Mode", ["Commission Amount", "Commission %"])
+    product_choice = st.selectbox("Product", ["PCP", "HP", "LP"])
 with col3:
     sort_by = st.selectbox("Sort By", ["Highest Commission", "Lowest APR"])
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --- FILTER & CALCULATE ---
-product_choice = "PCP"  # Default to PCP for prioritization logic
 df_filtered = df[df["Products"].str.contains(product_choice)]
 df_fav = df_filtered[df_filtered["Favorite"] == True]
 
@@ -111,15 +103,12 @@ for _, row in df_fav.iterrows():
     cap = float(row['Commission Cap']) if row['Commission Cap'] else None
     if "HP:" in comm_str and product_choice in ["HP","PCP"]:
         rate = float(comm_str.split(f"{product_choice}:")[1].split()[0])
-        comm = (rate / 100) * deal_amount
-        if cap: comm = min(comm, cap)
-        results.append([row['Lender'], row['Advance Band'], rate, comm, row['APR']])
     else:
         try: rate = float(comm_str)
         except: rate = 0
-        comm = (rate / 100) * deal_amount
-        if cap: comm = min(comm, cap)
-        results.append([row['Lender'], row['Advance Band'], rate, comm, row['APR']])
+    comm = (rate / 100) * deal_amount
+    if cap: comm = min(comm, cap)
+    results.append([row['Lender'], row['Advance Band'], rate, comm, row['APR']])
 
 calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
 
@@ -138,10 +127,10 @@ with col3:
 
 # --- TABLE ---
 st.subheader("Detailed Lender Data")
-if view_mode == "Commission Amount":
+if sort_by == "Highest Commission":
     display_df = calc_df.sort_values(by="Commission (£)", ascending=False)
 else:
-    display_df = calc_df.sort_values(by="Commission %", ascending=False)
+    display_df = calc_df.sort_values(by="APR", ascending=True)
 st.dataframe(display_df, use_container_width=True)
 
 # --- DOWNLOAD ---

@@ -2,34 +2,31 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 
-# --- PAGE CONFIG & THEME ---
-st.set_page_config(
-    page_title="Saxton4x4 Lender Commission Tool",
-    page_icon="💰",
-    layout="wide"
-)
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="Saxton4x4 Lender Commission Tool", page_icon="💰", layout="wide")
 
-# --- CUSTOM STYLING ---
+# --- CUSTOM CSS ---
 st.markdown("""
     <style>
     .stApp {background-color: #f8f9fa; font-family: 'Arial', sans-serif;}
-    h1, h2, h3 {color: #1e3d59;}
-    .stTabs [role="tablist"] > div {font-size: 18px !important; font-weight: bold !important; color: #1e3d59 !important;}
-    div.stButton > button {
-        background-color: #1e3d59; color: white; border-radius: 8px; height: 50px; font-size: 18px;
+    h1 {color: #1e3d59; text-align: center; margin-bottom: 10px;}
+    .input-card {
+        background-color: #ffffff; padding: 20px; border-radius: 10px;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
     }
-    div.stButton > button:hover {background-color: #27496d;}
-    .stNumberInput input, .stSelectbox div {font-size: 18px !important;}
-    .card {
-        background-color:white; padding:20px; border-radius:10px;
+    .stat-card {
+        padding: 20px; border-radius: 10px; color: #1e3d59;
         box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-        margin-bottom:20px;
+        font-size: 20px; font-weight: bold; margin-bottom: 15px;
     }
+    .best {background-color: #e8f9f0;}
+    .apr {background-color: #e8f1fb;}
+    .count {background-color: #f5e8fb;}
+    .label {font-size:16px; font-weight: normal; color: #555;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER ---
-st.markdown("<h1 style='text-align:center;'>Saxton4x4 Lender Commission Tool</h1>", unsafe_allow_html=True)
+st.markdown("<h1>Saxton4x4 Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- DATASET ---
 data = {
@@ -92,67 +89,70 @@ data = {
 }
 df = pd.DataFrame(data)
 
-# --- TOP FILTERS (MOBILE-FRIENDLY) ---
+# --- INPUT PANEL ---
+st.markdown("<div class='input-card'>", unsafe_allow_html=True)
 col1, col2, col3 = st.columns([1,1,1])
 with col1:
-    product_choice = st.selectbox("Product", ["PCP", "HP", "LP"])
+    deal_amount = st.number_input("Advance Amount (£)", min_value=0, max_value=500000, value=30000, step=500)
 with col2:
-    deal_amount = st.number_input("Deal Amount (£):", min_value=0, max_value=500000, value=25000, step=500)
+    view_mode = st.selectbox("View Mode", ["Commission Amount", "Commission %"])
 with col3:
-    show_least_fav = st.checkbox("Include least-favorite lenders", value=False)
+    sort_by = st.selectbox("Sort By", ["Highest Commission", "Lowest APR"])
+st.markdown("</div>", unsafe_allow_html=True)
 
-# Filter lenders
-df = df[df["Products"].str.contains(product_choice)]
-if not show_least_fav:
-    df = df[df["Favorite"] == True]
+# --- FILTER & CALCULATE ---
+product_choice = "PCP"  # Default to PCP for prioritization logic
+df_filtered = df[df["Products"].str.contains(product_choice)]
+df_fav = df_filtered[df_filtered["Favorite"] == True]
 
-# --- CALCULATE COMMISSIONS ---
 results = []
-for _, row in df.iterrows():
+for _, row in df_fav.iterrows():
     comm_str = row['Commission %']
     cap = float(row['Commission Cap']) if row['Commission Cap'] else None
     if "HP:" in comm_str and product_choice in ["HP","PCP"]:
         rate = float(comm_str.split(f"{product_choice}:")[1].split()[0])
         comm = (rate / 100) * deal_amount
         if cap: comm = min(comm, cap)
-        results.append([row['Lender'], row['Advance Band'], rate, comm])
+        results.append([row['Lender'], row['Advance Band'], rate, comm, row['APR']])
     else:
-        try:
-            rate = float(comm_str)
-        except:
-            rate = 0
+        try: rate = float(comm_str)
+        except: rate = 0
         comm = (rate / 100) * deal_amount
         if cap: comm = min(comm, cap)
-        results.append([row['Lender'], row['Advance Band'], rate, comm])
+        results.append([row['Lender'], row['Advance Band'], rate, comm, row['APR']])
 
-calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)"])
-ranked = calc_df.groupby("Lender")["Commission (£)"].max().sort_values(ascending=False).reset_index()
+calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
 
-# --- TABS ---
-tab1, tab2, tab3 = st.tabs(["Lender Comparison", "Commission Calculator", "Best Lender"])
+# --- SUMMARY CARDS ---
+best_commission_row = calc_df.loc[calc_df["Commission (£)"].idxmax()]
+lowest_apr_row = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
+lender_count = calc_df["Lender"].nunique()
 
-with tab1:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Lender Comparison")
-    st.dataframe(df, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown(f"<div class='stat-card best'>Best Commission<br><span style='font-size:28px;'>£{best_commission_row['Commission (£)']:.0f}</span><br><span class='label'>{best_commission_row['Lender']} ({product_choice})</span></div>", unsafe_allow_html=True)
+with col2:
+    st.markdown(f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr_row['APR']}</span><br><span class='label'>{lowest_apr_row['Lender']}</span></div>", unsafe_allow_html=True)
+with col3:
+    st.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
 
-with tab2:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Commission Calculator")
-    st.dataframe(calc_df.sort_values(by="Commission (£)", ascending=False), use_container_width=True)
-    st.download_button("Download as CSV", calc_df.to_csv(index=False).encode(), "commissions.csv")
-    st.markdown("</div>", unsafe_allow_html=True)
+# --- TABLE ---
+st.subheader("Detailed Lender Data")
+if view_mode == "Commission Amount":
+    display_df = calc_df.sort_values(by="Commission (£)", ascending=False)
+else:
+    display_df = calc_df.sort_values(by="Commission %", ascending=False)
+st.dataframe(display_df, use_container_width=True)
 
-with tab3:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Best Lender Recommendation")
-    top3 = ranked.head(3)
-    top3['Rank'] = ["🥇 1st","🥈 2nd","🥉 3rd"]
-    st.dataframe(top3, use_container_width=True)
-    if product_choice == "PCP":
-        st.info("Zopa PCP is prioritized — review this first for potential better balloons than Santander.")
-    fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission by Lender", text_auto=True)
-    fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
-    st.plotly_chart(fig, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+# --- DOWNLOAD ---
+st.download_button("Download as CSV", calc_df.to_csv(index=False).encode(), "commissions.csv")
+
+# --- NOTE ---
+if product_choice == "PCP":
+    st.info("Zopa PCP is prioritized — review this first for potential better balloons than Santander.")
+
+# --- CHART ---
+st.subheader("Commission by Lender")
+fig = px.bar(calc_df, x="Lender", y="Commission (£)", title="Commission Amount by Lender", text_auto=True)
+fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
+st.plotly_chart(fig, use_container_width=True)

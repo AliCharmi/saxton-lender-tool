@@ -19,6 +19,7 @@ st.markdown("""
         box-shadow: 0px 2px 6px rgba(0,0,0,0.1); font-size: 20px; font-weight: bold; margin-bottom: 15px;}
     .best {background-color: #e8f9f0;} .apr {background-color: #e8f1fb;} .count {background-color: #f5e8fb;}
     .label {font-size:16px; font-weight: normal; color: #555;}
+    .highlight-row {background-color: #d4edda !important;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -104,23 +105,22 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # --- SAFE BAND FILTER ---
 def band_includes(band, amount):
-    # Handle empty or invalid
     if not isinstance(band, str) or band.strip() == "":
         return False
     band = band.replace(",", "").replace("%", "").strip()
     if "All" in band:
         return True
     try:
-        if "+" in band:  # e.g. "50000+"
+        if "+" in band:
             numbers = re.findall(r"\d+", band)
             lower = int(numbers[0])
             return amount >= lower
-        elif "-" in band:  # e.g. "25000-39999"
+        elif "-" in band:
             numbers = re.findall(r"\d+", band)
             if len(numbers) >= 2:
                 lower, upper = int(numbers[0]), int(numbers[1])
                 return lower <= amount <= upper
-        else:  # Single number
+        else:
             number = int(re.findall(r"\d+", band)[0])
             return amount == number
     except:
@@ -144,7 +144,10 @@ for _, row in df_fav.iterrows():
         except: rate = 0
     comm = (rate / 100) * deal_amount
     if cap: comm = min(comm, cap)
-    results.append([row['Lender'], row['Advance Band'], rate, comm, row['APR']])
+    lender_name = row['Lender']
+    if product_choice == "PCP" and lender_name == "ZOPA":
+        lender_name = "⭐ ZOPA (Recommended)"
+    results.append([lender_name, row['Advance Band'], rate, comm, row['APR']])
 
 calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
 
@@ -152,6 +155,12 @@ calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %
 if calc_df.empty:
     st.warning("No lenders available for this combination of product and advance amount.")
 else:
+    # --- PRIORITISE ZOPA FOR PCP ---
+    if product_choice == "PCP":
+        zopa_df = calc_df[calc_df["Lender"].str.contains("ZOPA")]
+        others_df = calc_df[~calc_df["Lender"].str.contains("ZOPA")]
+        calc_df = pd.concat([zopa_df, others_df])
+
     # --- SUMMARY CARDS ---
     best_commission_row = calc_df.loc[calc_df["Commission (£)"].idxmax()]
     lowest_apr_row = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
@@ -178,12 +187,12 @@ else:
 
     # --- NOTE ---
     if product_choice == "PCP":
-        st.info("Zopa PCP is prioritised — review this first for potential better balloons than Santander.")
+        st.info("Zopa PCP is prioritised — review this first as their balloons may outperform Santander.")
 
     # --- CHART ---
     st.subheader("Commission by Lender")
     ranked = calc_df.sort_values(by="Commission (£)", ascending=False)
-    ranked['Colour'] = ['#FFD700' if i==0 else '#C0C0C0' if i==1 else '#CD7F32' if i==2 else '#1e3d59' for i in range(len(ranked))]
+    ranked['Colour'] = ['#FFD700' if "ZOPA" in l else '#1e3d59' for l in ranked['Lender']]
     fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount by Lender", text_auto=True)
     fig.update_traces(marker_color=ranked['Colour'])
     fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))

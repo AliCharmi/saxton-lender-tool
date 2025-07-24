@@ -11,25 +11,17 @@ st.markdown("""
     <style>
     .stApp {background-color: #f8f9fa; font-family: 'Arial', sans-serif;}
     h1 {color: #1e3d59; text-align: center; margin-bottom: 10px;}
-    .header {display:flex; align-items:center; justify-content:center; margin-bottom:20px;}
-    .header img {height:50px; margin-right:15px;}
     .input-card {background-color: #ffffff; padding: 20px; border-radius: 10px;
         box-shadow: 0px 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
     .stat-card {padding: 20px; border-radius: 10px; color: #1e3d59;
         box-shadow: 0px 2px 6px rgba(0,0,0,0.1); font-size: 20px; font-weight: bold; margin-bottom: 15px;}
     .best {background-color: #e8f9f0;} .apr {background-color: #e8f1fb;} .count {background-color: #f5e8fb;}
     .label {font-size:16px; font-weight: normal; color: #555;}
-    .highlight-row {background-color: #d4edda !important;}
     </style>
 """, unsafe_allow_html=True)
 
 # --- HEADER ---
-st.markdown("""
-<div class="header">
-    <img src="https://www.saxton4x4.co.uk/images/logo.png">
-    <h1>Saxton4x4 Lender Commission Tool</h1>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("<h1>Saxton4x4 Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- DATASET ---
 data = {

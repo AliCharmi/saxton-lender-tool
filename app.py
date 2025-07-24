@@ -166,14 +166,23 @@ else:
     with col3:
         st.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
 
+    # --- NOTES BOX ---
+    st.info("""
+    **Zopa PCP is prioritised — review this first as their balloons may outperform Santander.**  
+    **If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.**
+    """)
+
     # --- TABLE ---
     st.subheader("Detailed Lender Data")
-    st.markdown("**Zopa PCP is prioritised — review this first as their balloons may outperform Santander.**")
     if sort_by == "Highest Commission":
         display_df = calc_df.sort_values(by="Commission (£)", ascending=False)
     else:
         display_df = calc_df.sort_values(by="APR", ascending=True)
-    st.dataframe(display_df, use_container_width=True)
+
+    def highlight_zopa(row):
+        return ['background-color: #d4edda' if 'ZOPA' in str(row['Lender']) else '' for _ in row]
+
+    st.dataframe(display_df.style.apply(highlight_zopa, axis=1), use_container_width=True)
 
     # --- DOWNLOAD ---
     st.download_button("Download as CSV", calc_df.to_csv(index=False).encode(), "commissions.csv")

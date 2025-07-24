@@ -168,6 +168,7 @@ else:
 
     # --- TABLE ---
     st.subheader("Detailed Lender Data")
+    st.markdown("**Zopa PCP is prioritised — review this first as their balloons may outperform Santander.**")
     if sort_by == "Highest Commission":
         display_df = calc_df.sort_values(by="Commission (£)", ascending=False)
     else:
@@ -176,10 +177,6 @@ else:
 
     # --- DOWNLOAD ---
     st.download_button("Download as CSV", calc_df.to_csv(index=False).encode(), "commissions.csv")
-
-    # --- NOTE ---
-    if product_choice == "PCP":
-        st.info("Zopa PCP is prioritised — review this first as their balloons may outperform Santander.")
 
     # --- CHART ---
     st.subheader("Commission by Lender")

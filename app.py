@@ -15,10 +15,9 @@ st.markdown("""
     .input-card {background-color: #ffffff; padding: 20px; border-radius: 10px;
         box-shadow: 0px 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
     .stat-card {padding: 20px; border-radius: 10px; color: #1e3d59;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1); font-size: 20px; font-weight: bold; margin-bottom: 15px; cursor:pointer;}
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.1); font-size: 20px; font-weight: bold; margin-bottom: 15px;}
     .best {background-color: #e8f9f0;} .apr {background-color: #e8f1fb;} .count {background-color: #f5e8fb;}
     .label {font-size:16px; font-weight: normal; color: #555;}
-    .highlight {background-color: #d4edda !important;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -39,14 +38,14 @@ data = {
                "Moto Novo", "Oodle", "Blue", "Startline Low", "Startline High",
                "Marsh Low", "Marsh High",
                "JBR"],
-    "Advance Band": ["0-24,999", "25,000-39,999", "40,000-49,999", "50,000+",
-                     "0-24,999", "25,000-39,999", "40,000-49,999",
-                     "2,500-40,000+",
+    "Advance Band": ["0-24999", "25000-39999", "40000-49999", "50000+",
+                     "0-24999", "25000-39999", "40000-49999",
+                     "2500-40000+",
                      "All", "All", "All", "All",
-                     "All", "All", "12.9-19.9",
-                     "16.9%", "19.9%",
-                     "0-30,000", "0-30,000",
-                     "0-500,000"],
+                     "All", "All", "12900-19900",
+                     "16900", "19900",
+                     "0-30000", "0-30000",
+                     "0-500000"],
     "Products": [
         "HP,LP,PCP","HP,LP,PCP","HP,LP,PCP","HP,LP,PCP",
         "HP,PCP","HP,PCP","HP,PCP",
@@ -137,39 +136,41 @@ for _, row in df_fav.iterrows():
 calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
 
 # --- SUMMARY CARDS ---
-best_commission_row = calc_df.loc[calc_df["Commission (£)"].idxmax()]
-lowest_apr_row = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
-lender_count = calc_df["Lender"].nunique()
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    if st.markdown(f"<div class='stat-card best'>Best Commission<br><span style='font-size:28px;'>£{best_commission_row['Commission (£)']:.0f}</span><br><span class='label'>{best_commission_row['Lender']} ({product_choice})</span></div>", unsafe_allow_html=True):
-        pass
-with col2:
-    st.markdown(f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr_row['APR']}</span><br><span class='label'>{lowest_apr_row['Lender']}</span></div>", unsafe_allow_html=True)
-with col3:
-    st.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
-
-# --- TABLE ---
-st.subheader("Detailed Lender Data")
-if sort_by == "Highest Commission":
-    display_df = calc_df.sort_values(by="Commission (£)", ascending=False)
+if calc_df.empty:
+    st.warning("No lenders available for this combination of product and advance amount.")
 else:
-    display_df = calc_df.sort_values(by="APR", ascending=True)
-st.dataframe(display_df.style.apply(lambda x: ['background: #d4edda' if x["Commission (£)"] == best_commission_row["Commission (£)"] else '' for _ in x], axis=1), use_container_width=True)
+    best_commission_row = calc_df.loc[calc_df["Commission (£)"].idxmax()]
+    lowest_apr_row = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
+    lender_count = calc_df["Lender"].nunique()
 
-# --- DOWNLOAD ---
-st.download_button("Download as CSV", calc_df.to_csv(index=False).encode(), "commissions.csv")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"<div class='stat-card best'>Best Commission<br><span style='font-size:28px;'>£{best_commission_row['Commission (£)']:.0f}</span><br><span class='label'>{best_commission_row['Lender']} ({product_choice})</span></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr_row['APR']}</span><br><span class='label'>{lowest_apr_row['Lender']}</span></div>", unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
 
-# --- NOTE ---
-if product_choice == "PCP":
-    st.info("Zopa PCP is prioritised — review this first for potential better balloons than Santander.")
+    # --- TABLE ---
+    st.subheader("Detailed Lender Data")
+    if sort_by == "Highest Commission":
+        display_df = calc_df.sort_values(by="Commission (£)", ascending=False)
+    else:
+        display_df = calc_df.sort_values(by="APR", ascending=True)
+    st.dataframe(display_df, use_container_width=True)
 
-# --- CHART ---
-st.subheader("Commission by Lender")
-ranked = calc_df.sort_values(by="Commission (£)", ascending=False)
-ranked['Colour'] = ['#FFD700' if i==0 else '#C0C0C0' if i==1 else '#CD7F32' if i==2 else '#1e3d59' for i in range(len(ranked))]
-fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount by Lender", text_auto=True)
-fig.update_traces(marker_color=ranked['Colour'])
-fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
-st.plotly_chart(fig, use_container_width=True)
+    # --- DOWNLOAD ---
+    st.download_button("Download as CSV", calc_df.to_csv(index=False).encode(), "commissions.csv")
+
+    # --- NOTE ---
+    if product_choice == "PCP":
+        st.info("Zopa PCP is prioritised — review this first for potential better balloons than Santander.")
+
+    # --- CHART ---
+    st.subheader("Commission by Lender")
+    ranked = calc_df.sort_values(by="Commission (£)", ascending=False)
+    ranked['Colour'] = ['#FFD700' if i==0 else '#C0C0C0' if i==1 else '#CD7F32' if i==2 else '#1e3d59' for i in range(len(ranked))]
+    fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount by Lender", text_auto=True)
+    fig.update_traces(marker_color=ranked['Colour'])
+    fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
+    st.plotly_chart(fig, use_container_width=True)

@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import re
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Saxton4x4 Lender Commission Tool", page_icon="💰", layout="wide")
@@ -101,17 +102,29 @@ with col3:
     sort_by = st.selectbox("Sort By", ["Highest Commission", "Lowest APR"])
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- FILTERING FUNCTION ---
+# --- SAFE BAND FILTER ---
 def band_includes(band, amount):
-    band = band.replace(",", "")
-    if "+" in band:
-        lower = int(band.split("+")[0])
-        return amount >= lower
-    elif "-" in band:
-        lower, upper = band.split("-")
-        return int(lower) <= amount <= int(upper)
-    elif "All" in band:
+    # Handle empty or invalid
+    if not isinstance(band, str) or band.strip() == "":
+        return False
+    band = band.replace(",", "").replace("%", "").strip()
+    if "All" in band:
         return True
+    try:
+        if "+" in band:  # e.g. "50000+"
+            numbers = re.findall(r"\d+", band)
+            lower = int(numbers[0])
+            return amount >= lower
+        elif "-" in band:  # e.g. "25000-39999"
+            numbers = re.findall(r"\d+", band)
+            if len(numbers) >= 2:
+                lower, upper = int(numbers[0]), int(numbers[1])
+                return lower <= amount <= upper
+        else:  # Single number
+            number = int(re.findall(r"\d+", band)[0])
+            return amount == number
+    except:
+        return False
     return False
 
 # --- FILTER DATA ---
@@ -135,10 +148,11 @@ for _, row in df_fav.iterrows():
 
 calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
 
-# --- SUMMARY CARDS ---
+# --- IF NO DATA ---
 if calc_df.empty:
     st.warning("No lenders available for this combination of product and advance amount.")
 else:
+    # --- SUMMARY CARDS ---
     best_commission_row = calc_df.loc[calc_df["Commission (£)"].idxmax()]
     lowest_apr_row = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
     lender_count = calc_df["Lender"].nunique()

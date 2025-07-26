@@ -14,7 +14,7 @@ os.makedirs("data", exist_ok=True)
 @st.cache_data
 def load_data(file_path):
     df = pd.read_excel(file_path)
-    # Normalise column names
+    # Normalise headers
     df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True).str.title()
     col_map = {
         'Apr (%)': 'APR',
@@ -29,19 +29,12 @@ def load_data(file_path):
     required_cols = ["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap", "Preference"]
     for col in required_cols:
         if col not in df.columns:
-            if col == "Products":
-                df[col] = "HP,PCP,LP"
-            elif col == "Preference":
-                df[col] = "Green"
-            else:
-                df[col] = 0
-    # Clean numeric columns
+            if col == "Products": df[col] = "HP,PCP,LP"
+            elif col == "Preference": df[col] = "Green"
+            else: df[col] = 0
+    # Clean numeric
     for col in ["APR", "Commission %", "Commission Cap"]:
-        df[col] = pd.to_numeric(df[col].astype(str).str.replace("%", "").str.replace("£", "").str.replace(",", "").str.strip(), errors='coerce')
-    # Validate
-    if "Lender" not in df.columns or "Advance Band" not in df.columns:
-        st.error("Uploaded Excel is missing essential columns like 'Lender' or 'Advance Band'. Please check the template.")
-        return pd.DataFrame(columns=required_cols)
+        df[col] = pd.to_numeric(df[col].astype(str).str.replace("%","").str.replace("£","").str.replace(",","").str.strip(), errors='coerce')
     return df
 
 def save_uploaded_file(uploaded_file):
@@ -53,12 +46,10 @@ def band_includes(band, amount):
     if not isinstance(band, str) or band.strip() == "":
         return False
     band = band.replace(",", "").replace("%", "").strip()
-    if "All" in band:
-        return True
+    if "All" in band: return True
     try:
         if "+" in band:
-            lower = int(re.findall(r"\d+", band)[0])
-            return amount >= lower
+            lower = int(re.findall(r"\d+", band)[0]); return amount >= lower
         elif "-" in band:
             nums = re.findall(r"\d+", band)
             if len(nums) >= 2:
@@ -89,14 +80,17 @@ if uploaded_file:
     last_updated = datetime.now().strftime("%d %b %Y %H:%M")
     st.success("Lender data successfully updated.")
 
+# Debug preview
+st.markdown("### Debug: Preview of Loaded Excel")
+st.dataframe(df.head(10))
+
 # Data health
 incomplete_rows = df[df["APR"].isnull() | df["Commission %"].isnull()]
 total_lenders = df["Lender"].nunique()
 if len(incomplete_rows) > 0:
-    st.warning(f"⚠️ {len(incomplete_rows)} rows have missing APR or commission values. Please check the Excel.")
+    st.warning(f"⚠️ {len(incomplete_rows)} rows have missing APR or commission values.")
 else:
     st.success("All data is healthy.")
-
 st.markdown(f"**Lenders loaded:** {total_lenders} | **Incomplete rows:** {len(incomplete_rows)} | **Last updated:** {last_updated}")
 st.download_button("Download Template", data=open(DATA_PATH,"rb").read(), file_name="Saxton Rates and Commissions.xlsx")
 
@@ -110,8 +104,7 @@ with col2:
 # Product selection
 st.markdown("### Select Product")
 prod_col1, prod_col2, prod_col3 = st.columns(3)
-if "product_choice" not in st.session_state:
-    st.session_state.product_choice = "PCP"
+if "product_choice" not in st.session_state: st.session_state.product_choice = "PCP"
 if prod_col1.button("PCP", key="pcp_btn"): st.session_state.product_choice = "PCP"
 if prod_col2.button("HP", key="hp_btn"): st.session_state.product_choice = "HP"
 if prod_col3.button("LP", key="lp_btn"): st.session_state.product_choice = "LP"
@@ -120,6 +113,10 @@ product_choice = st.session_state.product_choice
 # Filter
 df_filtered = df[df["Products"].str.contains(product_choice, case=False, na=False)]
 df_filtered = df_filtered[df_filtered["Advance Band"].apply(lambda b: band_includes(b, deal_amount))]
+
+# Debug: why no matches
+if df_filtered.empty:
+    st.error(f"No matches for {product_choice} at £{deal_amount}. Check 'Advance Band' format and 'Products' column in Excel.")
 
 # Calculate commissions
 results = []
@@ -137,7 +134,7 @@ calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Products", "
 
 # Display
 if calc_df.empty:
-    st.warning("No lenders available for this combination.")
+    st.stop()
 else:
     # Zopa priority
     if product_choice == "PCP":
@@ -149,7 +146,6 @@ else:
     best_commission_row = calc_df.loc[calc_df["Commission (£)"].idxmax()]
     lowest_apr_row = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if pd.notna(x) else 99).idxmin()]
     lender_count = calc_df["Lender"].nunique()
-
     c1, c2, c3 = st.columns(3)
     c1.metric("Best Commission", f"£{best_commission_row['Commission (£)']:.0f}", best_commission_row['Lender'])
     c2.metric("Lowest APR", lowest_apr_row['APR'], lowest_apr_row['Lender'])
@@ -174,9 +170,9 @@ else:
     # Highlighting
     def style_rows(row):
         if pd.isna(row['APR']) or pd.isna(row['Commission %']):
-            return ['background-color: #f8d7da']*len(row)  # red for incomplete
+            return ['background-color: #f8d7da']*len(row)
         if 'ZOPA' in str(row['Lender']).upper():
-            return ['background-color: #d4edda']*len(row)  # green for Zopa
+            return ['background-color: #d4edda']*len(row)
         return ['']*len(row)
     st.dataframe(display_df.style.apply(style_rows, axis=1), use_container_width=True)
 

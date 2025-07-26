@@ -14,16 +14,34 @@ os.makedirs("data", exist_ok=True)
 @st.cache_data
 def load_data(file_path):
     df = pd.read_excel(file_path)
+    # Normalise column names
+    df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True).str.title()
+    col_map = {
+        'Apr (%)': 'APR',
+        'Apr': 'APR',
+        'Introductory Comms (Hp)': 'Commission %',
+        'Introductory Comms (Pcp)': 'Commission %',
+        'Commissions Cap (£)': 'Commission Cap',
+        'Comission Cap (£)': 'Commission Cap'
+    }
+    df.rename(columns={k: v for k, v in col_map.items() if k in df.columns}, inplace=True)
     # Ensure required columns exist
     required_cols = ["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap", "Preference"]
     for col in required_cols:
         if col not in df.columns:
-            if col == "Products": df[col] = "HP,PCP,LP"
-            elif col == "Preference": df[col] = "Green"
-            else: df[col] = ""
+            if col == "Products":
+                df[col] = "HP,PCP,LP"
+            elif col == "Preference":
+                df[col] = "Green"
+            else:
+                df[col] = 0
     # Clean numeric columns
     for col in ["APR", "Commission %", "Commission Cap"]:
-        df[col] = df[col].apply(lambda x: pd.to_numeric(str(x).replace("%","").replace("£","").replace(",","").strip(), errors='coerce'))
+        df[col] = pd.to_numeric(df[col].astype(str).str.replace("%", "").str.replace("£", "").str.replace(",", "").str.strip(), errors='coerce')
+    # Validate
+    if "Lender" not in df.columns or "Advance Band" not in df.columns:
+        st.error("Uploaded Excel is missing essential columns like 'Lender' or 'Advance Band'. Please check the template.")
+        return pd.DataFrame(columns=required_cols)
     return df
 
 def save_uploaded_file(uploaded_file):
@@ -106,9 +124,8 @@ df_filtered = df_filtered[df_filtered["Advance Band"].apply(lambda b: band_inclu
 # Calculate commissions
 results = []
 for _, row in df_filtered.iterrows():
-    comm_str = str(row['Commission %'])
-    cap = row['Commission Cap'] if not pd.isna(row['Commission Cap']) else None
     rate = row['Commission %'] if not pd.isna(row['Commission %']) else 0
+    cap = row['Commission Cap'] if not pd.isna(row['Commission Cap']) else None
     comm = (rate / 100) * deal_amount
     if cap: comm = min(comm, cap)
     lender_name = row['Lender']

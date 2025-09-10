@@ -119,12 +119,15 @@ else:
     col2.markdown(f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr['APR']}</span><br><span class='label'>{lowest_apr['Lender']}</span></div>", unsafe_allow_html=True)
     col3.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
 
-    # --- INFO BOX WITH ADMIRAL NOTE ---
     st.info("""
     **Zopa PCP is prioritised — review this first as their balloons may outperform Santander.**  
     **If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.**
 
-    **Note:** Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.
+    **Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering.**  
+    **However, it is rate for risk, so always check the acceptance for full balance and comms cap.**  
+    **If commission gets capped, check if it's more elsewhere.**
+
+    **Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.**
     """)
 
     st.subheader("Detailed Lender Data")
@@ -142,4 +145,3 @@ else:
     fig.update_traces(marker_color=ranked['Colour'])
     fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
     st.plotly_chart(fig, use_container_width=True)
-

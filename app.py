@@ -41,7 +41,7 @@ data = [
     ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 0, 1500, True],
     ["Marsh High", "0-30000", "HP,PCP", 26.9, 0, 1500, True],
     ["JBR", "0-500000", "HP,LP", 10.9, 5, None, True],
-    ["Admiral", "0-59999", "HP,PCP", "9.9-25.0", 7.5, 2500, True]
+    ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500, True]
 ]
 
 df = pd.DataFrame(data, columns=["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap", "Favourite"])
@@ -142,3 +142,4 @@ else:
     fig.update_traces(marker_color=ranked['Colour'])
     fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
     st.plotly_chart(fig, use_container_width=True)
+

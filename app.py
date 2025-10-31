@@ -4,7 +4,7 @@ import plotly.express as px
 import re
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Saxton4x4 Lender Commission Tool", page_icon="💰", layout="wide")
+st.set_page_config(page_title="Saxtons Lender Commission Tool", page_icon="💰", layout="wide")
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -21,7 +21,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- HEADER ---
-st.markdown("<h1>Saxton4x4 Lender Commission Tool</h1>", unsafe_allow_html=True)
+st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- DATASET ---
 data = [
@@ -40,7 +40,8 @@ data = [
     ["Startline High", "19900", "HP,PCP", 19.9, 5, 1500, False],
     ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 0, 1500, True],
     ["Marsh High", "0-30000", "HP,PCP", 26.9, 0, 1500, True],
-    ["JBR", "0-500000", "HP,LP", 10.9, 5, None, True],
+    ["JBR", "0-500000", "HP,LP", 10.9, 5.5, None, True],
+    ["Tandem", "0-60000", "HP", "10.9-19.9", 7, 2000, True],
     ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500, True]
 ]
 
@@ -123,11 +124,9 @@ else:
     **Zopa PCP is prioritised — review this first as their balloons may outperform Santander.**  
     **If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.**
 
-    **Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering.**  
-    **However, it is rate for risk, so always check the acceptance for full balance and comms cap.**  
-    **If commission gets capped, check if it's more elsewhere.**
-
     **Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.**
+
+    **Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering, however is rate for risk, so always check the acceptance for full balance and Comms cap. If comms get capped, then we need to check if it gets more elsewhere.**
     """)
 
     st.subheader("Detailed Lender Data")

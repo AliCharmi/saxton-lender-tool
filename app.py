@@ -38,7 +38,8 @@ df = load_data()
 
 # --- CLEANING ---
 df["Favourite"] = df["Favourite"].fillna(False)
-df["Notes"] = df["Notes"].fillna("")
+if "Notes" not in df.columns:
+    df["Notes"] = ""
 
 # --- INPUT PANEL ---
 st.markdown("<div style='background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;'>", unsafe_allow_html=True)
@@ -157,4 +158,5 @@ fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount b
 fig.update_traces(marker_color=ranked['Colour'])
 fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
 st.plotly_chart(fig, use_container_width=True)
+
 

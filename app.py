@@ -67,8 +67,8 @@ st.markdown("""
 st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- DATASET ---
-EXCEL_URL = "https://raw.githubusercontent.com/AliCharmi/saxton-lender-tool/main/data/commission_data.xlsx"
-df = pd.read_excel(https://raw.githubusercontent.com/AliCharmi/saxton-lender-tool/main/data/commission_data.xlsx)
+EXCEL_URL = "https://github.com/AliCharmi/saxton-lender-tool/raw/refs/heads/main/data/commission_data_clean.xlsx"
+df = pd.read_excel(https://github.com/AliCharmi/saxton-lender-tool/raw/refs/heads/main/data/commission_data_clean.xlsx)
 
 
 columns = ["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap"]
@@ -165,4 +165,5 @@ else:
                  title="Commission by Lender", text_auto=True)
     fig.update_layout(plot_bgcolor="#f4f6f8", paper_bgcolor="#f4f6f8", font=dict(size=16))
     st.plotly_chart(fig, use_container_width=True)
+
 

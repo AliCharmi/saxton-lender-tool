@@ -28,7 +28,7 @@ if not login():
 st.markdown("<h1 style='text-align:center; color:#1e3d59;'>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- LOAD DATA FROM GITHUB ---
-url = "https://raw.githubusercontent.com/your-username/your-repo/main/data/commission_data_clean.xlsx"
+url = "https://raw.githubusercontent.com/AliCharmi/saxton-lender-tool/main/data/commission_data_clean.xlsx"
 
 @st.cache_data
 def load_data():
@@ -157,3 +157,4 @@ fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount b
 fig.update_traces(marker_color=ranked['Colour'])
 fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
 st.plotly_chart(fig, use_container_width=True)
+

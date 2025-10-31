@@ -121,12 +121,20 @@ else:
     col3.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
 
     st.info("""
-    **Zopa PCP is prioritised — review this first as their balloons may outperform Santander.**  
-    **If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.**
+    ### ZOPA PCP
+    Zopa PCP is prioritised — review this first as their balloons may outperform Santander.  
+    If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.
 
-    **Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.**
+    ### ADMIRAL
+    Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.  
+    Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering.  
+    However, it’s rate-for-risk — always check acceptance for full balance and if commission gets capped, compare to others.
 
-    **Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering, however is rate for risk, so always check the acceptance for full balance and Comms cap. If comms get capped, then we need to check if it gets more elsewhere.**
+    ### JBR (HP only)
+    There has been a commission update with JBR which now puts them in front of Santander on £40k+ advances and Zopa on £33k+ HP deals.  
+    With the products they offer, we should now be able to get more on with them naturally and earn more commission overall.  
+    ✅ Minimum 10% deposit required  
+    ✅ Deposit must also cover products (e.g. warranty, ceramic, tracker)
     """)
 
     st.subheader("Detailed Lender Data")

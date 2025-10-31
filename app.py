@@ -67,19 +67,9 @@ st.markdown("""
 st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- DATASET ---
-data = [
-    ["Santander", "0-24999", "HP,LP,PCP", 12.9, 9.05, None],
-    ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6.8, None],
-    ["Santander", "40000-49999", "HP,LP,PCP", 10.9, 5.15, None],
-    ["Santander", "50000+", "HP,LP,PCP", 9.9, 4, None],
-    ["ZOPA", "0-24999", "HP,PCP", 12.9, "HP:9.15 PCP:11.15", 3000],
-    ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000],
-    ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000],
-    ["Mann Island", "2500-40000+", "HP,PCP,LP", 10.9, 6.75, 3000],
-    ["JBR", "0-500000", "HP,LP", 10.9, 5.5, None],
-    ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500],
-    ["Tandem", "0-60000", "HP", "10.9-19.9", 7.0, 2000]
-]
+EXCEL_URL = "https://raw.githubusercontent.com/AliCharmi/saxton-lender-tool/main/data/commission_data.xlsx"
+df = pd.read_excel(https://raw.githubusercontent.com/AliCharmi/saxton-lender-tool/main/data/commission_data.xlsx)
+
 
 columns = ["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap"]
 df = pd.DataFrame(data, columns=columns)
@@ -175,3 +165,4 @@ else:
                  title="Commission by Lender", text_auto=True)
     fig.update_layout(plot_bgcolor="#f4f6f8", paper_bgcolor="#f4f6f8", font=dict(size=16))
     st.plotly_chart(fig, use_container_width=True)
+

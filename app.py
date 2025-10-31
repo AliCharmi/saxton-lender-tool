@@ -6,10 +6,28 @@ import re
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Saxtons Lender Commission Tool", page_icon="💰", layout="wide")
 
+# --- AUTH ---
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    with st.form("login_form"):
+        st.title("Login")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        login = st.form_submit_button("Login")
+        if login:
+            if username == "Saxtons1" and password == "Saxtons1":
+                st.session_state.authenticated = True
+                st.experimental_rerun()
+            else:
+                st.error("Invalid login. Please try again.")
+    st.stop()
+
 # --- CUSTOM CSS ---
 st.markdown("""
     <style>
-    .stApp {background-color: #f8f9fa; font-family: 'Arial', sans-serif;}
+    .stApp {background-color: #f5f7fa; font-family: 'Arial', sans-serif;}
     h1 {color: #1e3d59; text-align: center; margin-bottom: 10px;}
     .input-card {background-color: #ffffff; padding: 20px; border-radius: 10px;
         box-shadow: 0px 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
@@ -20,34 +38,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER ---
 st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
-# --- DATASET ---
-data = [
-    ["Santander", "0-24999", "HP,LP,PCP", 12.9, 9.05, None, True],
-    ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6.8, None, True],
-    ["Santander", "40000-49999", "HP,LP,PCP", 10.9, 5.15, None, True],
-    ["Santander", "50000+", "HP,LP,PCP", 9.9, 4, None, True],
-    ["ZOPA", "0-24999", "HP,PCP", 12.9, "HP:9.15 PCP:11.15", 3000, True],
-    ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000, True],
-    ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000, True],
-    ["Mann Island", "2500-40000+", "HP,PCP,LP", 10.9, 6.75, 3000, True],
-    ["Moto Novo", "All", "HP,PCP", 11.9, 2, None, True],
-    ["Oodle", "All", "HP", "Rate for risk", 7, 2500, False],
-    ["Blue", "12900-19900", "HP", "12.9-19.9", 8, 2000, False],
-    ["Startline Low", "16900", "HP,PCP", 16.9, 5, 2000, False],
-    ["Startline High", "19900", "HP,PCP", 19.9, 5, 1500, False],
-    ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 0, 1500, True],
-    ["Marsh High", "0-30000", "HP,PCP", 26.9, 0, 1500, True],
-    ["JBR", "0-500000", "HP,LP", 10.9, 5.5, None, True],
-    ["Tandem", "0-60000", "HP", "10.9-19.9", 7, 2000, True],
-    ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500, True]
-]
+# --- DATA ---
+EXCEL_URL = "https://github.com/AliCharmi/saxton-lender-tool/raw/main/data/commission_data_clean.xlsx"
+@st.cache_data
+def load_data():
+    df = pd.read_excel(EXCEL_URL)
+    df["Notes"] = df["Notes"].fillna("")
+    return df
 
-df = pd.DataFrame(data, columns=["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap", "Favourite"])
+df = load_data()
 
-# --- INPUT PANEL ---
+# --- INPUT ---
 st.markdown("<div class='input-card'>", unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 with col1:
@@ -62,7 +65,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # --- FILTERING ---
 def band_includes(band, amount):
-    band = band.replace(",", "").replace("%", "").strip()
+    band = band.replace(",", "").strip()
     if "All" in band: return True
     if "+" in band: return amount >= int(re.findall(r"\d+", band)[0])
     if "-" in band:
@@ -98,9 +101,9 @@ for _, row in applicable.iterrows():
     if row["Lender"] == "ZOPA" and product_choice == "PCP":
         lender_display = "⭐ ZOPA (Recommended)"
 
-    results.append([lender_display, row["Advance Band"], rate, comm, apr])
+    results.append([lender_display, row["Advance Band"], rate, comm, apr, row["Notes"]])
 
-calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
+calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR", "Notes"])
 
 # --- DISPLAY ---
 if calc_df.empty:
@@ -121,20 +124,11 @@ else:
     col3.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
 
     st.info("""
-    ### ZOPA PCP
-    Zopa PCP is prioritised — review this first as their balloons may outperform Santander.  
-    If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.
-
-    ### ADMIRAL
-    Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.  
-    Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering.  
-    However, it’s rate-for-risk — always check acceptance for full balance and if commission gets capped, compare to others.
-
-    ### JBR (HP only)
-    There has been a commission update with JBR which now puts them in front of Santander on £40k+ advances and Zopa on £33k+ HP deals.  
-    With the products they offer, we should now be able to get more on with them naturally and earn more commission overall.  
-    ✅ Minimum 10% deposit required  
-    ✅ Deposit must also cover products (e.g. warranty, ceramic, tracker)
+    **Zopa PCP is prioritised — review this first as their balloons may outperform Santander.**  
+    **If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.**  
+    **Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.**  
+    **Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering, however is rate for risk, so always check the acceptance for full balance and Comms cap. If comms get capped, then we need to check if it gets more elsewhere.**  
+    **There has been a Comms update with JBR which now puts them in front of Santander on £40k+ Advances and Zopa on £33k+ on HP Only.**
     """)
 
     st.subheader("Detailed Lender Data")

@@ -3,8 +3,10 @@ import streamlit as st
 import plotly.express as px
 import re
 
+# --- PAGE CONFIG ---
 st.set_page_config(page_title="Saxtons Lender Commission Tool", page_icon="💰", layout="wide")
 
+# --- CUSTOM CSS ---
 st.markdown("""
     <style>
     .stApp {background-color: #f8f9fa; font-family: 'Arial', sans-serif;}
@@ -18,33 +20,34 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- HEADER ---
 st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
+# --- DATASET ---
 data = [
-    ["Santander", "0-24999", "HP,LP,PCP", 12.9, 9.05, None, True, ""],
-    ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6.8, None, True, ""],
-    ["Santander", "40000-49999", "HP,LP,PCP", 10.9, 5.15, None, True, ""],
-    ["Santander", "50000+", "HP,LP,PCP", 9.9, 4, None, True, ""],
-    ["ZOPA", "0-24999", "HP,PCP", 12.9, "HP:9.15 PCP:11.15", 3000, True, ""],
-    ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000, True, ""],
-    ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000, True, ""],
-    ["Mann Island", "2500-40000+", "HP,PCP,LP", 10.9, 6.75, 3000, True, ""],
-    ["Oodle & Blue", "All", "HP", "12.9-19.9", 8, 2000, False, ""],
-    ["Startline Low", "16900", "HP,PCP", 16.9, 5, 2000, False, ""],
-    ["Startline High", "19900", "HP,PCP", 19.9, 5, 1500, False, ""],
-    ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 0, 1500, True, ""],
-    ["Marsh High", "0-30000", "HP,PCP", 26.9, 0, 1500, True, ""],
-    ["JBR", "0-500000", "HP,LP", 10.9, 5.5, None, True, "There has been a Comms update with JBR which now puts them in front of Santander on £40k+ Advances and Zopa on £33k+ on HP Only."],
-    ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500, True, "Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest. Approach after Santander & Zopa. Check acceptance & caps."],
-    ["Tandem", "0-60000", "HP", "10.9-19.9", 7.0, 2000, True, ""],
-    ["Abound", "0-50000", "HP", 18.9, 5.0, None, False, "Ideal for customers with negative equity. Can support deals where traditional lenders decline."],
-    ["GoCarCredit", "0-25000", "HP", 24.9, 1.0, None, False, "Use only as last resort. Speak to Luke or Ali before payout."]
+    ["Santander", "0-24999", "HP,LP,PCP", 12.9, 9.05, None, True],
+    ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6.8, None, True],
+    ["Santander", "40000-49999", "HP,LP,PCP", 10.9, 5.15, None, True],
+    ["Santander", "50000+", "HP,LP,PCP", 9.9, 4, None, True],
+    ["ZOPA", "0-24999", "HP,PCP", 12.9, "HP:9.15 PCP:11.15", 3000, True],
+    ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000, True],
+    ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000, True],
+    ["Mann Island", "2500-40000+", "HP,PCP,LP", 10.9, 6.75, 3000, True],
+    ["Moto Novo", "All", "HP,PCP", 11.9, 2, None, True],
+    ["Oodle", "All", "HP", "Rate for risk", 7, 2500, False],
+    ["Blue", "12900-19900", "HP", "12.9-19.9", 8, 2000, False],
+    ["Startline Low", "16900", "HP,PCP", 16.9, 5, 2000, False],
+    ["Startline High", "19900", "HP,PCP", 19.9, 5, 1500, False],
+    ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 0, 1500, True],
+    ["Marsh High", "0-30000", "HP,PCP", 26.9, 0, 1500, True],
+    ["JBR", "0-500000", "HP,LP", 10.9, 5.5, None, True],
+    ["Tandem", "0-60000", "HP", "10.9-19.9", 7, 2000, True],
+    ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500, True]
 ]
 
-columns = ["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap", "Favourite", "Notes"]
-df = pd.DataFrame(data, columns=columns)
+df = pd.DataFrame(data, columns=["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap", "Favourite"])
 
-# UI Input
+# --- INPUT PANEL ---
 st.markdown("<div class='input-card'>", unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 with col1:
@@ -57,6 +60,7 @@ with col4:
     term_months = st.selectbox("Term (months)", [24, 36, 48, 60])
 st.markdown("</div>", unsafe_allow_html=True)
 
+# --- FILTERING ---
 def band_includes(band, amount):
     band = band.replace(",", "").replace("%", "").strip()
     if "All" in band: return True
@@ -75,7 +79,6 @@ for _, row in applicable.iterrows():
     comm_rate = row["Commission %"]
     cap = float(row["Commission Cap"]) if pd.notnull(row["Commission Cap"]) else None
     apr = row["APR"]
-    note = row["Notes"]
 
     if isinstance(comm_rate, str) and f"{product_choice}:" in comm_rate:
         rate = float(comm_rate.split(f"{product_choice}:")[1].split()[0])
@@ -91,10 +94,15 @@ for _, row in applicable.iterrows():
         comm = min(comm, interest_est * 0.5)
     if cap: comm = min(comm, cap)
 
-    results.append([row["Lender"], row["Advance Band"], rate, comm, apr, note])
+    lender_display = row["Lender"]
+    if row["Lender"] == "ZOPA" and product_choice == "PCP":
+        lender_display = "⭐ ZOPA (Recommended)"
 
-calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR", "Notes"])
+    results.append([lender_display, row["Advance Band"], rate, comm, apr])
 
+calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
+
+# --- DISPLAY ---
 if calc_df.empty:
     st.warning("No lenders available for this combination.")
 else:
@@ -104,13 +112,30 @@ else:
         calc_df = pd.concat([zopa, others])
 
     best_comm = calc_df.loc[calc_df["Commission (£)"].idxmax()]
-    lowest_apr = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if isinstance(x, str) else x).idxmin()]
+    lowest_apr = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
     lender_count = calc_df["Lender"].nunique()
 
     col1, col2, col3 = st.columns(3)
     col1.markdown(f"<div class='stat-card best'>Best Commission<br><span style='font-size:28px;'>£{best_comm['Commission (£)']:.0f}</span><br><span class='label'>{best_comm['Lender']} ({product_choice})</span></div>", unsafe_allow_html=True)
     col2.markdown(f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr['APR']}</span><br><span class='label'>{lowest_apr['Lender']}</span></div>", unsafe_allow_html=True)
     col3.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
+
+    st.info("""
+    ### ZOPA PCP
+    Zopa PCP is prioritised — review this first as their balloons may outperform Santander.  
+    If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.
+
+    ### ADMIRAL
+    Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.  
+    Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering.  
+    However, it’s rate-for-risk — always check acceptance for full balance and if commission gets capped, compare to others.
+
+    ### JBR (HP only)
+    There has been a commission update with JBR which now puts them in front of Santander on £40k+ advances and Zopa on £33k+ HP deals.  
+    With the products they offer, we should now be able to get more on with them naturally and earn more commission overall.  
+    ✅ Minimum 10% deposit required  
+    ✅ Deposit must also cover products (e.g. warranty, ceramic, tracker)
+    """)
 
     st.subheader("Detailed Lender Data")
     df_to_show = calc_df.sort_values("Commission (£)", ascending=(sort_by != "Highest Commission"))
@@ -127,3 +152,4 @@ else:
     fig.update_traces(marker_color=ranked['Colour'])
     fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
     st.plotly_chart(fig, use_container_width=True)
+

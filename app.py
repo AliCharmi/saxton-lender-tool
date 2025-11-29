@@ -56,11 +56,9 @@ motion_finance_lenders = [
     ["Close (Motion)", "All", "HP,PCP", 10.9, 3.5, 3000, False],
     ["Moto Novo (Motion)", "All", "HP,PCP", 11.9, 4.5, 3000, False],
 
-    # HP only
     ["Oodle & Blue (Motion)", "All", "HP", "Rate for risk", 3, 3000, False],
     ["Go Car Credit (Motion)", "All", "HP", "Rate for risk", 0.5, None, False],
 
-    # Loan only
     ["ABOUND (Personal Loan)", "All", "Loan", "N/A", "No commission", None, False],
 ]
 
@@ -98,18 +96,18 @@ def band_includes(band, amount):
         return parts[0] <= amount <= parts[1]
     return amount == int(re.findall(r"\d+", band)[0]) if band.isdigit() else False
 
+# Filter lenders by product and advance band
 applicable = df[df["Products"].str.contains(product_choice, na=False)]
 applicable = applicable[applicable["Advance Band"].apply(lambda x: band_includes(x, deal_amount))]
-applicable = applicable[applicable["Favourite"] == True]
 
 results = []
 
+# --- CALCULATE COMMISSIONS ---
 for _, row in applicable.iterrows():
     comm_rate = row["Commission %"]
     cap = float(row["Commission Cap"]) if pd.notnull(row["Commission Cap"]) else None
     apr = row["APR"]
 
-    # Product-specific commission parsing
     if isinstance(comm_rate, str) and f"{product_choice}:" in comm_rate:
         rate = float(comm_rate.split(f"{product_choice}:")[1].split()[0])
     else:
@@ -121,7 +119,6 @@ for _, row in applicable.iterrows():
     interest_est = (rate / 100) * deal_amount * (term_months / 12)
     comm = (rate / 100) * deal_amount
 
-    # Admiral special rules
     if row["Lender"] == "Admiral":
         if term_months < 36:
             continue
@@ -131,82 +128,84 @@ for _, row in applicable.iterrows():
         comm = min(comm, cap)
 
     lender_display = row["Lender"]
-
     if row["Lender"] == "ZOPA" and product_choice == "PCP":
         lender_display = "⭐ ZOPA (Recommended)"
 
-    results.append([lender_display, row["Advance Band"], rate, comm, apr])
+    results.append([lender_display, row["Advance Band"], rate, comm, apr, row["Lender"]])
 
-calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
+calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR", "TrueName"])
 
-# --- DISPLAY ---
-if calc_df.empty:
-    st.warning("No lenders available for this combination.")
+# --- SORT FOR DETAILED TABLE ---
+calc_df = calc_df.sort_values("Commission (£)", ascending=False)
 
-else:
-    # Prioritise Zopa on PCP
-    if product_choice == "PCP":
-        zopa = calc_df[calc_df["Lender"].str.contains("ZOPA")]
-        others = calc_df[~calc_df["Lender"].str.contains("ZOPA")]
-        calc_df = pd.concat([zopa, others])
+# --- STAT CARDS (FAVOURITES ONLY) ---
+favourites_only = calc_df[calc_df["TrueName"].isin(df[df["Favourite"] == True]["Lender"])]
 
-    best_comm = calc_df.loc[calc_df["Commission (£)"].idxmax()]
-    lowest_apr = calc_df.loc[
-        calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()
-    ]
-    lender_count = calc_df["Lender"].nunique()
+if favourites_only.empty:
+    favourites_only = calc_df
 
-    col1, col2, col3 = st.columns(3)
+best_comm = favourites_only.loc[favourites_only["Commission (£)"].idxmax()]
+lowest_apr = favourites_only.loc[
+    favourites_only["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()
+]
+lender_count = calc_df["Lender"].nunique()
 
-    col1.markdown(
-        f"<div class='stat-card best'>Best Commission<br><span style='font-size:28px;'>£{best_comm['Commission (£)']:.0f}</span><br><span class='label'>{best_comm['Lender']} ({product_choice})</span></div>",
-        unsafe_allow_html=True
-    )
-    col2.markdown(
-        f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr['APR']}</span><br><span class='label'>{lowest_apr['Lender']}</span></div>",
-        unsafe_allow_html=True
-    )
-    col3.markdown(
-        f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>",
-        unsafe_allow_html=True
-    )
+col1, col2, col3 = st.columns(3)
 
-    # --- NOTES ---
-    st.info("""
+col1.markdown(
+    f"<div class='stat-card best'>Best Commission<br><span style='font-size:28px;'>£{best_comm['Commission (£)']:.0f}</span><br><span class='label'>{best_comm['Lender']} ({product_choice})</span></div>",
+    unsafe_allow_html=True
+)
+col2.markdown(
+    f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr['APR']}</span><br><span class='label'>{lowest_apr['Lender']}</span></div>",
+    unsafe_allow_html=True
+)
+col3.markdown(
+    f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>",
+    unsafe_allow_html=True
+)
+
+# --- NOTES ---
+st.info("""
 ### ZOPA PCP
 Zopa PCP is prioritised. Often better balloons than Santander.
 If Zopa declines, message Taylor — she may overturn it.
 
 ### ADMIRAL
 Commission only on 36+ months.
-Capped at £2,500 or 50% of interest.
+Capped at £2,500 or 50% of customer interest.
 
 ### JBR
-Stronger commission on £40k+ HP.
+Strong on £40k+ HP.
 10% minimum deposit including products.
 
 ### ⚠️ Additional Notes
-- **ABOUND (Personal Loan)**: For customers with negative equity. No commission. Use to save the deal.
-- **Go Car Credit (Motion)**: Very low commission. Use only when needed. Speak to Luke or Ali first.
+- **ABOUND (Personal Loan)**: For negative equity. No commission. Use to save a deal.
+- **Go Car Credit (Motion)**: Very low commission. Only use when needed. Speak to Luke or Ali first.
 """)
 
-    st.subheader("Detailed Lender Data")
-    df_to_show = calc_df.sort_values("Commission (£)", ascending=(sort_by != "Highest Commission"))
+# --- DETAILED LENDER TABLE ---
+st.subheader("Detailed Lender Data")
 
-    def highlight(row):
-        return ["background-color: #d4edda" if 'ZOPA' in str(row['Lender']) else '' for _ in row]
+def highlight(row):
+    return ["background-color: #d4edda" if 'ZOPA' in str(row['Lender']) else '' for _ in row]
 
-    st.dataframe(df_to_show.style.apply(highlight, axis=1), use_container_width=True)
+st.dataframe(calc_df[["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"]]
+             .style.apply(highlight, axis=1),
+             use_container_width=True)
 
-    st.download_button("Download as CSV", df_to_show.to_csv(index=False).encode(), "commissions.csv")
+st.download_button("Download as CSV",
+                   calc_df[["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"]]
+                   .to_csv(index=False).encode(),
+                   "commissions.csv")
 
-    # Chart
-    st.subheader("Commission by Lender")
-    ranked = df_to_show.sort_values("Commission (£)", ascending=False)
-    ranked['Colour'] = ['#FFD700' if "ZOPA" in lender else '#1e3d59' for lender in ranked['Lender']]
+# --- BAR CHART ---
+st.subheader("Commission by Lender")
+ranked = calc_df.sort_values("Commission (£)", ascending=False)
+ranked['Colour'] = ['#FFD700' if "ZOPA" in lender else '#1e3d59' for lender in ranked['Lender']]
 
-    fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount by Lender", text_auto=True)
-    fig.update_traces(marker_color=ranked['Colour'])
-    fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
+fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount by Lender", text_auto=True)
+fig.update_traces(marker_color=ranked['Colour'])
+fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
 
-    st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)

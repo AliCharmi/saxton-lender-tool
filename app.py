@@ -1,20 +1,42 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
 import plotly.express as px
 import re
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Saxtons Lender Commission Tool", page_icon="💰", layout="wide")
 
+# --- LOGIN ---
+def login():
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+
+    if not st.session_state.logged_in:
+        with st.form("login_form", clear_on_submit=False):
+            st.title("🔐 Saxtons Login")
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Log In")
+
+            if submit:
+                if username == "Saxtons1" and password == "Saxtons1":
+                    st.session_state.logged_in = True
+                    st.experimental_rerun()
+                else:
+                    st.error("Incorrect username or password")
+        st.stop()
+
+login()
+
 # --- CUSTOM CSS ---
 st.markdown("""
     <style>
-    .stApp {background-color: #f8f9fa; font-family: 'Arial', sans-serif;}
-    h1 {color: #1e3d59; text-align: center; margin-bottom: 10px;}
-    .input-card {background-color: #ffffff; padding: 20px; border-radius: 10px;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
-    .stat-card {padding: 20px; border-radius: 10px; color: #1e3d59;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1); font-size: 20px; font-weight: bold; margin-bottom: 15px;}
+    .stApp {background-color: #f5f7fa; font-family: 'Segoe UI', sans-serif;}
+    h1 {color: #003366; text-align: center; margin-bottom: 10px;}
+    .input-card {background-color: #ffffff; padding: 20px; border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px;}
+    .stat-card {padding: 20px; border-radius: 12px; color: #003366;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.07); font-size: 20px; font-weight: bold; margin-bottom: 15px;}
     .best {background-color: #e8f9f0;} .apr {background-color: #e8f1fb;} .count {background-color: #f5e8fb;}
     .label {font-size:16px; font-weight: normal; color: #555;}
     </style>
@@ -23,7 +45,7 @@ st.markdown("""
 # --- HEADER ---
 st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
-# --- DATASET ---
+# --- LENDER DATA ---
 data = [
     ["Santander", "0-24999", "HP,LP,PCP", 12.9, 9.05, None, True],
     ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6.8, None, True],
@@ -34,121 +56,87 @@ data = [
     ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000, True],
     ["Mann Island", "2500-40000+", "HP,PCP,LP", 10.9, 6.75, 3000, True],
     ["Moto Novo", "All", "HP,PCP", 11.9, 2, None, True],
-    ["Oodle", "All", "HP", "Rate for risk", 7, 2500, False],
     ["Blue", "12900-19900", "HP", "12.9-19.9", 8, 2000, False],
     ["Startline Low", "16900", "HP,PCP", 16.9, 5, 2000, False],
     ["Startline High", "19900", "HP,PCP", 19.9, 5, 1500, False],
     ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 0, 1500, True],
     ["Marsh High", "0-30000", "HP,PCP", 26.9, 0, 1500, True],
     ["JBR", "0-500000", "HP,LP", 10.9, 5.5, None, True],
-    ["Tandem", "0-60000", "HP", "10.9-19.9", 7, 2000, True],
-    ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500, True]
+    ["Tandem", "0-60000", "HP", "10.9-19.9", 7, 2000, False],
+    ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500, True],
+    ["Alphera", "All", "HP,PCP", 10.9, 4.5, 3000, False],
+    ["BNP", "All", "HP,PCP", 9.9, 4.5, 3000, False],
+    ["CAAF", "All", "HP,PCP", 10.9, 4.5, 3000, False],
+    ["Close", "All", "HP,PCP", 10.9, 3.5, 3000, False],
+    ["Moto Novo (Motion)", "All", "HP,PCP", 11.9, 4.5, 3000, False],
+    ["Oodle & Blue", "All", "HP", "Rate for risk", 3, 3000, False],
+    ["ABOUND (Personal Loan)", "All", "Loan", "N/A", 0, None, False],
+    ["Go Car Credit", "All", "HP", "Rate for risk", 0.5, None, False]
 ]
-
-df = pd.DataFrame(data, columns=["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap", "Favourite"])
+columns = ["Lender", "Advance Band", "Products", "APR", "Commission %", "Commission Cap", "Favourite"]
+df = pd.DataFrame(data, columns=columns)
 
 # --- INPUT PANEL ---
 st.markdown("<div class='input-card'>", unsafe_allow_html=True)
-col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+col1, col2, col3, col4 = st.columns(4)
 with col1:
-    deal_amount = st.number_input("Advance Amount (£)", min_value=0, max_value=500000, value=30000, step=500)
+    advance = st.number_input("Advance Amount (£)", min_value=0, max_value=500000, value=30000, step=500)
 with col2:
-    product_choice = st.selectbox("Product", ["PCP", "HP", "LP"])
+    product = st.selectbox("Product", ["HP", "PCP", "LP", "Loan"])
 with col3:
-    sort_by = st.selectbox("Sort By", ["Highest Commission", "Lowest APR"])
+    term = st.selectbox("Term (months)", [24, 36, 48, 60])
 with col4:
-    term_months = st.selectbox("Term (months)", [24, 36, 48, 60])
+    sort_by = st.selectbox("Sort By", ["Highest Commission", "Lowest APR"])
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- FILTERING ---
-def band_includes(band, amount):
-    band = band.replace(",", "").replace("%", "").strip()
+# --- LOGIC ---
+def match_band(band, val):
     if "All" in band: return True
-    if "+" in band: return amount >= int(re.findall(r"\d+", band)[0])
+    if "+" in band: return val >= int(band.split("+")[0])
     if "-" in band:
-        parts = list(map(int, re.findall(r"\d+", band)))
-        if len(parts) == 2: return parts[0] <= amount <= parts[1]
-    return amount == int(re.findall(r"\d+", band)[0]) if band.isdigit() else False
+        low, high = map(int, band.split("-"))
+        return low <= val <= high
+    return int(band) == val
 
-applicable = df[df["Products"].str.contains(product_choice)]
-applicable = applicable[applicable["Advance Band"].apply(lambda x: band_includes(x, deal_amount))]
-applicable = applicable[applicable["Favourite"] == True]
+matches = df[df["Products"].str.contains(product)]
+matches = matches[matches["Advance Band"].apply(lambda x: match_band(x.replace(",", ""), advance))]
+matches = matches[matches["Favourite"] == True]
 
 results = []
-for _, row in applicable.iterrows():
-    comm_rate = row["Commission %"]
+for _, row in matches.iterrows():
+    rate = row["Commission %"]
     cap = float(row["Commission Cap"]) if pd.notnull(row["Commission Cap"]) else None
     apr = row["APR"]
 
-    if isinstance(comm_rate, str) and f"{product_choice}:" in comm_rate:
-        rate = float(comm_rate.split(f"{product_choice}:")[1].split()[0])
+    if isinstance(rate, str) and f"{product}:" in rate:
+        pct = float(rate.split(f"{product}:")[1].split()[0])
     else:
-        try: rate = float(comm_rate)
-        except: rate = 0
+        try: pct = float(rate)
+        except: pct = 0
 
-    interest_est = (rate / 100) * deal_amount * (term_months / 12)
-    comm = (rate / 100) * deal_amount
-
+    comm = (pct / 100) * advance
+    interest = (pct / 100) * advance * (term / 12)
     if row["Lender"] == "Admiral":
-        if term_months < 36: continue
-        comm = min(comm, interest_est * 0.5)
+        if term < 36: continue
+        comm = min(comm, interest * 0.5)
     if cap: comm = min(comm, cap)
-
-    lender_display = row["Lender"]
-    if row["Lender"] == "ZOPA" and product_choice == "PCP":
-        lender_display = "⭐ ZOPA (Recommended)"
-
-    results.append([lender_display, row["Advance Band"], rate, comm, apr])
+    results.append([row["Lender"], row["Advance Band"], pct, comm, apr])
 
 calc_df = pd.DataFrame(results, columns=["Lender", "Advance Band", "Commission %", "Commission (£)", "APR"])
-
-# --- DISPLAY ---
 if calc_df.empty:
-    st.warning("No lenders available for this combination.")
+    st.warning("No lenders found for this combination.")
 else:
-    if product_choice == "PCP":
-        zopa = calc_df[calc_df["Lender"].str.contains("ZOPA")]
-        others = calc_df[~calc_df["Lender"].str.contains("ZOPA")]
-        calc_df = pd.concat([zopa, others])
-
-    best_comm = calc_df.loc[calc_df["Commission (£)"].idxmax()]
-    lowest_apr = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
-    lender_count = calc_df["Lender"].nunique()
+    best = calc_df.loc[calc_df["Commission (£)"].idxmax()]
+    lowest = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
+    count = calc_df["Lender"].nunique()
 
     col1, col2, col3 = st.columns(3)
-    col1.markdown(f"<div class='stat-card best'>Best Commission<br><span style='font-size:28px;'>£{best_comm['Commission (£)']:.0f}</span><br><span class='label'>{best_comm['Lender']} ({product_choice})</span></div>", unsafe_allow_html=True)
-    col2.markdown(f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr['APR']}</span><br><span class='label'>{lowest_apr['Lender']}</span></div>", unsafe_allow_html=True)
-    col3.markdown(f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>", unsafe_allow_html=True)
+    col1.markdown(f"<div class='stat-card best'>Top Commission<br><span style='font-size:28px;'>£{best['Commission (£)']:.0f}</span><br><span class='label'>{best['Lender']} ({product})</span></div>", unsafe_allow_html=True)
+    col2.markdown(f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest['APR']}</span><br><span class='label'>{lowest['Lender']}</span></div>", unsafe_allow_html=True)
+    col3.markdown(f"<div class='stat-card count'>Matching Lenders<br><span style='font-size:28px;'>{count}</span><br><span class='label'>For £{advance:,.0f}</span></div>", unsafe_allow_html=True)
 
-    st.info("""
-    ### ZOPA PCP
-    Zopa PCP is prioritised — review this first as their balloons may outperform Santander.  
-    If declined with Zopa, message Taylor regardless — she may be able to overturn the decision.
-
-    ### ADMIRAL
-    Admiral commission only applies to terms ≥ 36 months, capped at £2,500 or 50% of customer interest.  
-    Admiral to be approached after Santander and Zopa as they are in front of the others on their PCP and HP offering.  
-    However, it’s rate-for-risk — always check acceptance for full balance and if commission gets capped, compare to others.
-
-    ### JBR (HP only)
-    There has been a commission update with JBR which now puts them in front of Santander on £40k+ advances and Zopa on £33k+ HP deals.  
-    With the products they offer, we should now be able to get more on with them naturally and earn more commission overall.  
-    ✅ Minimum 10% deposit required  
-    ✅ Deposit must also cover products (e.g. warranty, ceramic, tracker)
-    """)
-
-    st.subheader("Detailed Lender Data")
+    st.subheader("Detailed Results")
     df_to_show = calc_df.sort_values("Commission (£)", ascending=(sort_by != "Highest Commission"))
+    st.dataframe(df_to_show, use_container_width=True)
 
-    def highlight(row): return ["background-color: #d4edda" if 'ZOPA' in str(row['Lender']) else '' for _ in row]
-    st.dataframe(df_to_show.style.apply(highlight, axis=1), use_container_width=True)
-
-    st.download_button("Download as CSV", df_to_show.to_csv(index=False).encode(), "commissions.csv")
-
-    st.subheader("Commission by Lender")
-    ranked = df_to_show.sort_values("Commission (£)", ascending=False)
-    ranked['Colour'] = ['#FFD700' if "ZOPA" in l else '#1e3d59' for l in ranked['Lender']]
-    fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount by Lender", text_auto=True)
-    fig.update_traces(marker_color=ranked['Colour'])
-    fig.update_layout(plot_bgcolor="#f8f9fa", paper_bgcolor="#f8f9fa", font=dict(size=16, color="#1e3d59"))
-    st.plotly_chart(fig, use_container_width=True)
+    st.download_button("Download CSV", df_to_show.to_csv(index=False).encode(), "commission_results.csv")

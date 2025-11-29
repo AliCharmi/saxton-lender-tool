@@ -31,27 +31,37 @@ data = [
     ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6.8, None, True],
     ["Santander", "40000-49999", "HP,LP,PCP", 10.9, 5.15, None, True],
     ["Santander", "50000+", "HP,LP,PCP", 9.9, 4, None, True],
+
     ["ZOPA", "0-24999", "HP,PCP", 12.9, "HP:9.15 PCP:11.15", 3000, True],
     ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000, True],
     ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000, True],
+
     ["Mann Island", "2500-40000+", "HP,PCP,LP", 10.9, 6.75, 3000, True],
+
     ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 0, 1500, True],
     ["Marsh High", "0-30000", "HP,PCP", 26.9, 0, 1500, True],
+
     ["JBR", "0-500000", "HP,LP", 10.9, 5.5, None, True],
+
     ["Tandem", "0-60000", "HP", "10.9-19.9", 7, 2000, True],
+
     ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500, True]
 ]
 
-# --- MOTION FINANCE LENDERS (replacement block) ---
+# --- MOTION FINANCE LENDERS (categorised) ---
 motion_finance_lenders = [
-    ["Alphera", "All", "HP,PCP", 10.9, 4.5, 3000, False],
-    ["BNP", "All", "HP,PCP", 9.9, 4.5, 3000, False],
-    ["CAAF", "All", "HP,PCP", 10.9, 4.5, 3000, False],
-    ["Close", "All", "HP,PCP", 10.9, 3.5, 3000, False],
+    ["Alphera (Motion)", "All", "HP,PCP", 10.9, 4.5, 3000, False],
+    ["BNP (Motion)", "All", "HP,PCP", 9.9, 4.5, 3000, False],
+    ["CAAF (Motion)", "All", "HP,PCP", 10.9, 4.5, 3000, False],
+    ["Close (Motion)", "All", "HP,PCP", 10.9, 3.5, 3000, False],
     ["Moto Novo (Motion)", "All", "HP,PCP", 11.9, 4.5, 3000, False],
-    ["Oodle & Blue", "All", "HP", "Rate for risk", 3, 3000, False],
+
+    # HP only
+    ["Oodle & Blue (Motion)", "All", "HP", "Rate for risk", 3, 3000, False],
+    ["Go Car Credit (Motion)", "All", "HP", "Rate for risk", 0.5, None, False],
+
+    # Loan only
     ["ABOUND (Personal Loan)", "All", "Loan", "N/A", "No commission", None, False],
-    ["Go Car Credit", "All", "HP", "Rate for risk", 0.5, None, False],
 ]
 
 data.extend(motion_finance_lenders)
@@ -99,7 +109,7 @@ for _, row in applicable.iterrows():
     cap = float(row["Commission Cap"]) if pd.notnull(row["Commission Cap"]) else None
     apr = row["APR"]
 
-    # Product-specific commission rate
+    # Product-specific commission parsing
     if isinstance(comm_rate, str) and f"{product_choice}:" in comm_rate:
         rate = float(comm_rate.split(f"{product_choice}:")[1].split()[0])
     else:
@@ -111,6 +121,7 @@ for _, row in applicable.iterrows():
     interest_est = (rate / 100) * deal_amount * (term_months / 12)
     comm = (rate / 100) * deal_amount
 
+    # Admiral special rules
     if row["Lender"] == "Admiral":
         if term_months < 36:
             continue
@@ -133,13 +144,16 @@ if calc_df.empty:
     st.warning("No lenders available for this combination.")
 
 else:
+    # Prioritise Zopa on PCP
     if product_choice == "PCP":
         zopa = calc_df[calc_df["Lender"].str.contains("ZOPA")]
         others = calc_df[~calc_df["Lender"].str.contains("ZOPA")]
         calc_df = pd.concat([zopa, others])
 
     best_comm = calc_df.loc[calc_df["Commission (£)"].idxmax()]
-    lowest_apr = calc_df.loc[calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()]
+    lowest_apr = calc_df.loc[
+        calc_df["APR"].apply(lambda x: float(str(x).split('-')[0]) if x != "Rate for risk" else 99).idxmin()
+    ]
     lender_count = calc_df["Lender"].nunique()
 
     col1, col2, col3 = st.columns(3)
@@ -148,34 +162,32 @@ else:
         f"<div class='stat-card best'>Best Commission<br><span style='font-size:28px;'>£{best_comm['Commission (£)']:.0f}</span><br><span class='label'>{best_comm['Lender']} ({product_choice})</span></div>",
         unsafe_allow_html=True
     )
-
     col2.markdown(
         f"<div class='stat-card apr'>Lowest APR<br><span style='font-size:28px;'>{lowest_apr['APR']}</span><br><span class='label'>{lowest_apr['Lender']}</span></div>",
         unsafe_allow_html=True
     )
-
     col3.markdown(
         f"<div class='stat-card count'>Available Lenders<br><span style='font-size:28px;'>{lender_count}</span><br><span class='label'>For £{deal_amount:,.0f}</span></div>",
         unsafe_allow_html=True
     )
 
-    # --- NOTES SECTION ---
+    # --- NOTES ---
     st.info("""
 ### ZOPA PCP
-Zopa PCP is prioritised. Review first as their balloons often outperform Santander.
-If declined with Zopa, message Taylor regardless — she may overturn the decision.
+Zopa PCP is prioritised. Often better balloons than Santander.
+If Zopa declines, message Taylor — she may overturn it.
 
 ### ADMIRAL
-Commission only applies to terms ≥ 36 months.
-Capped at £2,500 or 50% of customer interest.
+Commission only on 36+ months.
+Capped at £2,500 or 50% of interest.
 
-### JBR (HP only)
-Stronger now on £40k+ HP deals and £33k+ HP vs Zopa.
-Minimum 10% deposit required. Deposit must also cover products.
+### JBR
+Stronger commission on £40k+ HP.
+10% minimum deposit including products.
 
 ### ⚠️ Additional Notes
-- **ABOUND (Personal Loans)**: Best when customer has **negative equity**. No commission. Use only to save the deal.
-- **Go Car Credit**: Pays **very little commission**. Only use if needed. Speak to Luke or Ali before payout.
+- **ABOUND (Personal Loan)**: For customers with negative equity. No commission. Use to save the deal.
+- **Go Car Credit (Motion)**: Very low commission. Use only when needed. Speak to Luke or Ali first.
 """)
 
     st.subheader("Detailed Lender Data")
@@ -188,9 +200,10 @@ Minimum 10% deposit required. Deposit must also cover products.
 
     st.download_button("Download as CSV", df_to_show.to_csv(index=False).encode(), "commissions.csv")
 
+    # Chart
     st.subheader("Commission by Lender")
     ranked = df_to_show.sort_values("Commission (£)", ascending=False)
-    ranked['Colour'] = ['#FFD700' if "ZOPA" in l else '#1e3d59' for l in ranked['Lender']]
+    ranked['Colour'] = ['#FFD700' if "ZOPA" in lender else '#1e3d59' for lender in ranked['Lender']]
 
     fig = px.bar(ranked, x="Lender", y="Commission (£)", title="Commission Amount by Lender", text_auto=True)
     fig.update_traces(marker_color=ranked['Colour'])

@@ -36,7 +36,7 @@ data = [
     ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000, True],
     ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000, True],
 
-    ["Mann Island", "2500-40000+", "HP,PCP,LP", 10.9, 6.75, 3000, True],
+    ["Mann Island", "2500-40000+", "HP,PCP", 9.9, 6.5, 3000, True],
 
     ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 0, 1500, True],
     ["Marsh High", "0-30000", "HP,PCP", 26.9, 0, 1500, True],
@@ -243,3 +243,4 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig, use_container_width=True)
+

@@ -17,7 +17,7 @@ h1 {color:#1e3d59;text-align:center;}
 
 st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
-# --- DATA ---
+# --- LENDER DATA ---
 data = [
     ["Santander","0-24999","HP,LP,PCP",12.9,9.05,None,True],
     ["Santander","25000-39999","HP,LP,PCP",11.9,6.8,None,True],
@@ -65,7 +65,7 @@ sort_by = c3.selectbox("Sort By",["Highest Commission","Lowest APR"])
 term = c4.selectbox("Term (months)",[24,36,48,60])
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- BAND FILTER ---
+# --- FILTER ---
 def band_ok(band, amt):
     band = band.replace(",","")
     if "All" in band: return True
@@ -99,12 +99,9 @@ for _,r in app.iterrows():
 calc=pd.DataFrame(results,columns=["Lender","Rate %","Commission","Comm % of Deal","APR"])
 calc=calc.sort_values("Commission",ascending=False)
 
-# --- SAFE APR FUNCTION ---
 def safe_apr(x):
-    try:
-        return float(str(x).split('-')[0])
-    except:
-        return 999
+    try: return float(str(x).split('-')[0])
+    except: return 999
 
 # --- EXTRA PROFIT ---
 sant=calc[calc["Lender"].str.contains("Santander")]
@@ -130,13 +127,29 @@ c1.markdown(f"<div class='stat-card best'>Best Commission<br>£{best['Commission
 c2.markdown(f"<div class='stat-card apr'>Lowest APR<br>{low['APR']}</div>",unsafe_allow_html=True)
 c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}</div>",unsafe_allow_html=True)
 
+# --- OPERATIONAL NOTES ---
 st.info("""
-**Profit Rules**
+### ZOPA PCP
+Zopa PCP is prioritised. Often better balloons than Santander.  
+If declined, message Taylor — she may overturn it.
 
-• Zopa PCP first  
-• JBR strong HP £40k+  
-• Admiral only 36m+  
-• Avoid Go Car Credit unless approved  
+### ADMIRAL
+Commission only applies to terms ≥ 36 months.  
+Capped at £2,500 or 50% of interest.
+
+### JBR
+Strong on £40k+ HP.  
+10% minimum deposit required including products.
+
+### STARTLINE
+Use for lower advances under £20k.
+
+### MOTION FINANCE
+Multiple sub-lenders — compare offers carefully.
+
+### ⚠️ MANAGEMENT CONTROL
+ABOUND → Negative equity only. No commission.  
+Go Car Credit → Speak to Luke or Ali before payout.
 """)
 
 st.subheader("Detailed Lender Data")

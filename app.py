@@ -40,6 +40,7 @@ data = [
 
     ["Tandem","0-60000","HP","10.9-19.9",7,2000,True],
     ["Admiral","0-60000","HP,PCP","9.9-25.0",7.5,2500,True],
+    ["Close Brothers", "0-60000", "HP,PCP", 10.9, 6.0, 3000, True],
 ]
 
 motion = [
@@ -157,3 +158,4 @@ st.dataframe(calc,use_container_width=True)
 
 fig=px.bar(calc,x="Lender",y="Commission",color="Commission")
 st.plotly_chart(fig,use_container_width=True)
+

@@ -28,7 +28,7 @@ data = [
     ["ZOPA","25000-32999","HP,PCP",11.9,"HP:7.15 PCP:9.15",3000,True],
     ["ZOPA","33000-50000","HP,PCP",10.9,"HP:5.15 PCP:7.15",3000,True],
 
-    ["Mann Island","2500-40000+","HP,PCP",9.9,6.5,3000,True],
+    ["Mann Island","2500-40000+","HP,PCP",10.9,7.2,3000,True],
 
     ["Startline Low","0-16900","HP,PCP",16.9,5,2000,True],
     ["Startline High","0-19900","HP,PCP",19.9,5,1500,True],

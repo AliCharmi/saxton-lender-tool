@@ -57,7 +57,6 @@ motion = [
     ["Go Car Credit (Motion)","All","HP","Rate for risk",0.5,None,False],
     ["ABOUND (Personal Loan)","All","Loan","N/A","No commission",None,False],
 
-    # AYAN
     ["Ayan (Halal)","2000-45000","HP","7.9-22.0",7,3000,False],
 ]
 
@@ -77,7 +76,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # --- HALAL EXPLANATION ---
 if halal_mode:
     st.warning("""
-### HOW TO EXPLAIN AYAN
+### HOW TO EXPLAIN AYAN TO CUSTOMER
 
 - No interest  
 - Customer pays rental instead  
@@ -132,13 +131,13 @@ for _,r in app.iterrows():
     results.append([r["Lender"],rate,comm,pct,r["APR"]])
 
 calc=pd.DataFrame(results,columns=["Lender","Rate %","Commission","Comm % of Deal","APR"])
-calc=calc.sort_values("Commission",ascending=False)
+calc=calc.sort_values("Commission",ascending=(sort_by=="Lowest APR"))
 
 def safe_apr(x):
     try: return float(str(x).split('-')[0])
     except: return 999
 
-# --- TOP SECTION ---
+# --- TOP ---
 st.subheader("Top Lenders")
 
 if not halal_mode:
@@ -159,6 +158,50 @@ if not calc.empty:
     c1.markdown(f"<div class='stat-card best'>Best Commission<br>£{best['Commission']:.0f}</div>",unsafe_allow_html=True)
     c2.markdown(f"<div class='stat-card apr'>Lowest APR<br>{low['APR']}</div>",unsafe_allow_html=True)
     c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}</div>",unsafe_allow_html=True)
+
+# --- OPERATIONAL NOTES ---
+st.info("""
+### AYAN (HALAL FINANCE)
+Use only for halal or no interest customers  
+
+- No interest (rental model)  
+- No balloon payment  
+- Customer owns car at end  
+
+Criteria:
+- £2,000 to £45,000  
+- HP only  
+- Employed customers  
+
+Commission:
+- 7%  
+- Debit back applies:
+  100% months 1–3
+  75% months 4–6
+  50% months 7–12
+  0% after 12 months  
+
+---
+
+### ZOPA PCP
+Zopa PCP is prioritised.
+
+### ADMIRAL
+Term ≥ 36 months only.
+
+### JBR
+Strong on £40k+ HP.
+
+### STARTLINE
+Use under £20k.
+
+### MOTION
+Compare offers.
+
+### CONTROL
+ABOUND → no commission  
+Go Car → approval needed
+""")
 
 # --- TABLE ---
 st.subheader("Detailed Lender Data")

@@ -57,7 +57,7 @@ motion = [
     ["Go Car Credit (Motion)","All","HP","Rate for risk",0.5,None,False],
     ["ABOUND (Personal Loan)","All","Loan","N/A","No commission",None,False],
 
-    # NEW LENDER
+    # AYAN
     ["Ayan (Halal)","2000-45000","HP","7.9-22.0",7,3000,False],
 ]
 
@@ -66,12 +66,31 @@ df = pd.DataFrame(data, columns=["Lender","Advance Band","Products","APR","Commi
 
 # --- INPUTS ---
 st.markdown("<div class='input-card'>", unsafe_allow_html=True)
-c1,c2,c3,c4 = st.columns(4)
+c1,c2,c3,c4,c5 = st.columns(5)
 deal_amount = c1.number_input("Advance Amount (£)",0,500000,30000,500)
 product_choice = c2.selectbox("Product",["PCP","HP","LP","Loan"])
 sort_by = c3.selectbox("Sort By",["Highest Commission","Lowest APR"])
 term = c4.selectbox("Term (months)",[24,36,48,60])
+halal_mode = c5.checkbox("Halal Finance (Ayan Only)")
 st.markdown("</div>", unsafe_allow_html=True)
+
+# --- HALAL EXPLANATION ---
+if halal_mode:
+    st.warning("""
+### HOW TO EXPLAIN AYAN
+
+- No interest  
+- Customer pays rental instead  
+- No balloon payment  
+- Customer owns the car at the end  
+
+Use when:
+- Customer asks for halal finance  
+
+Do not:
+- Compare purely on rate  
+- Position as cheaper finance  
+""")
 
 # --- FILTER ---
 def band_ok(band, amt):
@@ -83,6 +102,10 @@ def band_ok(band, amt):
 
 app = df[df["Products"].str.contains(product_choice,na=False)]
 app = app[app["Advance Band"].apply(lambda x: band_ok(x,deal_amount))]
+
+if halal_mode:
+    product_choice = "HP"
+    app = app[app["Lender"].str.contains("Ayan")]
 
 # --- CALC ---
 results=[]
@@ -115,70 +138,29 @@ def safe_apr(x):
     try: return float(str(x).split('-')[0])
     except: return 999
 
-# --- EXTRA PROFIT ---
-sant=calc[calc["Lender"].str.contains("Santander")]
-base=sant["Commission"].max() if not sant.empty else 0
-calc["Extra vs Santander"]=calc["Commission"]-base
+# --- TOP SECTION ---
+st.subheader("Top Lenders")
 
-# --- TIERS ---
-calc["Tier"]="🟡 Backup"
-calc.loc[calc["Commission"].idxmax(),"Tier"]="🥇 Best Profit"
-calc.loc[calc.head(3).index,"Tier"]="🥈 Strong Option"
-calc.loc[calc["Lender"].str.contains("Go Car Credit|ABOUND"),"Tier"]="⚠️ Low Priority"
-calc.loc[calc["Lender"].str.contains("Ayan"),"Tier"]="🕌 Halal Option"
-
-# --- TOP 3 ---
-st.subheader("Top 3 Lenders For This Deal")
-for i,row in calc.head(3).iterrows():
-    st.write(f"{i+1}. {row['Lender']} — £{row['Commission']:.0f}")
+if not halal_mode:
+    for i,row in calc.head(3).iterrows():
+        st.write(f"{i+1}. {row['Lender']} — £{row['Commission']:.0f}")
+else:
+    if not calc.empty:
+        ayan = calc.iloc[0]
+        st.write("Ayan (Halal Finance Option)")
+        st.write(f"Commission: £{ayan['Commission']:.0f}")
+        st.write(f"Rate: {ayan['APR']}")
 
 # --- CARDS ---
-best=calc.iloc[0]
-low=calc.iloc[calc["APR"].apply(safe_apr).idxmin()]
-c1,c2,c3=st.columns(3)
-c1.markdown(f"<div class='stat-card best'>Best Commission<br>£{best['Commission']:.0f}</div>",unsafe_allow_html=True)
-c2.markdown(f"<div class='stat-card apr'>Lowest APR<br>{low['APR']}</div>",unsafe_allow_html=True)
-c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}</div>",unsafe_allow_html=True)
+if not calc.empty:
+    best=calc.iloc[0]
+    low=calc.iloc[calc["APR"].apply(safe_apr).idxmin()]
+    c1,c2,c3=st.columns(3)
+    c1.markdown(f"<div class='stat-card best'>Best Commission<br>£{best['Commission']:.0f}</div>",unsafe_allow_html=True)
+    c2.markdown(f"<div class='stat-card apr'>Lowest APR<br>{low['APR']}</div>",unsafe_allow_html=True)
+    c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}</div>",unsafe_allow_html=True)
 
-# --- OPERATIONAL NOTES ---
-st.info("""
-### AYAN (HALAL FINANCE)
-7% commission.  
-Debit back applies:  
-100% months 1–3  
-75% months 4–6  
-50% months 7–12  
-0% after 12 months  
-
-No interest product. Customer pays rental, not interest.  
-No early settlement penalty for customer.  
-
-Use for halal finance customers or where ethics matter.  
-Do not position purely on rate — explain structure.
-
-### ZOPA PCP
-Zopa PCP is prioritised. Often better balloons than Santander.  
-If declined, message Taylor — she may overturn it.
-
-### ADMIRAL
-Commission only applies to terms ≥ 36 months.  
-Capped at £2,500 or 50% of interest.
-
-### JBR
-Strong on £40k+ HP.  
-10% minimum deposit required including products.
-
-### STARTLINE
-Use for lower advances under £20k.
-
-### MOTION FINANCE
-Multiple sub-lenders — compare offers carefully.
-
-### ⚠️ MANAGEMENT CONTROL
-ABOUND → Negative equity only. No commission.  
-Go Car Credit → Speak to Luke or Ali before payout.
-""")
-
+# --- TABLE ---
 st.subheader("Detailed Lender Data")
 st.dataframe(calc,use_container_width=True)
 

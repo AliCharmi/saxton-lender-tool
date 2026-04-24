@@ -54,90 +54,61 @@ data = [
 
 df = pd.DataFrame(data, columns=["Lender","Advance Band","Products","APR","Commission %","Cap"])
 
+# --- MIN MAX ---
+def extract_min_max(band):
+    band = band.replace(",","")
+    if "All" in band: return 0,999999
+    if "+" in band:
+        low=int(re.findall(r"\d+",band)[0])
+        return low,999999
+    nums=re.findall(r"\d+",band)
+    return int(nums[0]),int(nums[1])
+
+df["Min Advance"], df["Max Advance"] = zip(*df["Advance Band"].apply(extract_min_max))
+
 # --- INPUTS ---
 st.markdown("<div class='input-card'>", unsafe_allow_html=True)
-c1,c2,c3,c4,c5 = st.columns(5)
-
-deal_amount = c1.number_input("Advance (£)",0,500000,30000,500)
-product_choice = c2.selectbox("Product",["PCP","HP","LP","Loan"])
-sort_by = c3.selectbox("Sort By",["Highest Commission","Lowest APR"])
-term = c4.selectbox("Term",[24,36,48,60])
-halal_mode = c5.checkbox("Halal Finance (Ayan Only)")
-
+c1,c2,c3,c4,c5=st.columns(5)
+deal_amount=c1.number_input("Advance (£)",0,500000,30000,500)
+product_choice=c2.selectbox("Product",["PCP","HP","LP","Loan"])
+sort_by=c3.selectbox("Sort By",["Highest Commission","Lowest APR"])
+term=c4.selectbox("Term",[24,36,48,60])
+halal_mode=c5.checkbox("Halal Finance (Ayan Only)")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- AYAN FULL TRAINING ---
+# --- AYAN FULL NOTES ---
 if halal_mode:
-    st.warning("""
-### 🕌 HALAL FINANCE – AYAN
+    st.warning("""🕌 HALAL FINANCE – AYAN (IJARA WA IQTINA)
 
-#### ONE LINE PITCH
-This is a halal finance option where you rent the car instead of paying interest, and you own it at the end with no large final payment.
+Customer rents the vehicle. No interest. Ownership transfers at the end.
 
----
+Ayan owns the car → customer pays rental → ownership transfers over time.
 
-#### HOW TO EXPLAIN
+No balloon. Early settlement allowed.
 
-1. This is not a loan, no interest  
-2. Ayan owns the car, customer pays rental  
-3. Customer owns the car at the end  
-
----
-
-#### CUSTOMER QUESTIONS
-
-Is this 0%  
-No. There is a cost but not interest  
-
-Do I own the car  
-Yes at the end  
-
-Is there a balloon  
-No  
-
-Can I settle early  
-Yes, no penalty to customer  
-
----
-
-#### BM RULES
-
-Only use if customer asks  
-Do not compare on APR  
-Do not say cheaper  
-Do not say same as HP  
-
----
-
-#### COMMISSION + RISK
-
-7% commission  
-Cap £3,000  
+Commission 7% (cap £3,000)
 
 Debit back:
-100% months 1–3  
-75% months 4–6  
-50% months 7–12  
-0% after 12  
+100% 1–3m | 75% 4–6m | 50% 7–12m | 0% after
 
 Customer no penalty  
-Dealer full clawback exposure
+Dealer clawback applies
 """)
 
 # --- FILTER ---
-def band_ok(band, amt):
-    band = band.replace(",","")
-    if "All" in band: return True
-    if "+" in band: return amt >= int(re.findall(r"\d+",band)[0])
-    low,high = re.findall(r"\d+",band)
+def band_ok(band,amt):
+    band=band.replace(",","")
+    if "All" in band:return True
+    if "+" in band:return amt>=int(re.findall(r"\d+",band)[0])
+    low,high=re.findall(r"\d+",band)
     return int(low)<=amt<=int(high)
 
-app = df[df["Products"].str.contains(product_choice,na=False)]
-app = app[app["Advance Band"].apply(lambda x: band_ok(x,deal_amount))]
+app=df[df["Products"].str.contains(product_choice,na=False)]
+app=app[app["Advance Band"].apply(lambda x: band_ok(x,deal_amount))]
 
 if halal_mode:
     product_choice="HP"
-    app = app[app["Lender"].str.contains("Ayan")]
+    app=app[app["Lender"].str.contains("Ayan")]
 
 # --- CALC ---
 rows=[]
@@ -147,13 +118,13 @@ for _,r in app.iterrows():
     if isinstance(rate,str) and f"{product_choice}:" in rate:
         rate=float(rate.split(f"{product_choice}:")[1].split()[0])
     else:
-        try: rate=float(rate)
-        except: rate=0
+        try:rate=float(rate)
+        except:rate=0
 
     comm=(rate/100)*deal_amount
 
     if r["Lender"]=="Admiral":
-        if term<36: continue
+        if term<36:continue
         interest=(rate/100)*deal_amount*(term/12)
         comm=min(comm,interest*0.5)
 
@@ -163,26 +134,24 @@ for _,r in app.iterrows():
     rows.append([r["Lender"],rate,comm,r["APR"]])
 
 calc=pd.DataFrame(rows,columns=["Lender","Rate %","Commission","APR"])
-
-# --- APR VALUE ---
-def apr_val(x):
-    try: return float(str(x).split('-')[0])
-    except: return 999
+calc=calc.merge(df[["Lender","Min Advance","Max Advance"]],on="Lender",how="left")
 
 # --- SORT ---
+def apr_val(x):
+    try:return float(str(x).split('-')[0])
+    except:return 999
+
 if sort_by=="Lowest APR":
     calc["APR_val"]=calc["APR"].apply(apr_val)
     calc=calc.sort_values("APR_val")
 else:
     calc=calc.sort_values("Commission",ascending=False)
 
-# --- EXTRA ---
-base = calc[calc["Lender"].str.contains("Santander")]["Commission"].max() if not calc.empty else 0
-calc["Extra vs Santander"] = calc["Commission"] - base
-calc["Missed Profit"] = calc["Commission"].max() - calc["Commission"]
-
-# --- PERCENT ---
-calc["Comm % of Deal"] = (calc["Commission"] / deal_amount) * 100
+# --- METRICS ---
+base=calc[calc["Lender"].str.contains("Santander")]["Commission"].max() if not calc.empty else 0
+calc["Extra vs Santander"]=calc["Commission"]-base
+calc["Missed Profit"]=calc["Commission"].max()-calc["Commission"]
+calc["Comm %"]=(calc["Commission"]/deal_amount)*100
 
 # --- BADGES ---
 calc["Tier"]="🟡 Backup"
@@ -190,44 +159,29 @@ if not calc.empty:
     calc.loc[calc["Commission"].idxmax(),"Tier"]="🥇 Best Profit"
     calc.loc[calc.head(3).index,"Tier"]="🥈 Strong Option"
     calc.loc[calc["Lender"].str.contains("Ayan"),"Tier"]="🕌 Halal Finance"
-    calc.loc[calc["Lender"].str.contains("Go Car|ABOUND"),"Tier"]="🔴 Risk"
 
-# --- INSIGHT ---
-calc["Why"] = calc["Lender"].apply(lambda x:
-    "Best profit" if "Santander" in x else
-    "Strong PCP" if "ZOPA" in x else
-    "High value HP" if "JBR" in x else
-    "Halal only" if "Ayan" in x else
-    ""
-)
-
-calc["Risk"] = calc["Lender"].apply(lambda x:
-    "High clawback" if "Ayan" in x else
-    "Medium" if "Admiral" in x else
-    "Low"
-)
+# --- FORMAT ---
+calc["Min Advance"]=calc["Min Advance"].apply(lambda x:f"£{x:,.0f}")
+calc["Max Advance"]=calc["Max Advance"].apply(lambda x:"No Limit" if x>500000 else f"£{x:,.0f}")
 
 # --- TOP ---
 st.subheader("Top Lenders")
+for i,row in calc.head(3).iterrows():
+    st.write(f"{i+1}. {row['Lender']} — £{row['Commission']:.0f} — {row['Tier']}")
 
-if not halal_mode:
-    for i,row in calc.head(3).iterrows():
-        st.write(f"{i+1}. {row['Lender']} — £{row['Commission']:.0f} — {row['Tier']}")
-else:
-    if not calc.empty:
-        r=calc.iloc[0]
-        st.write(f"{r['Tier']} — £{r['Commission']:.0f}")
+# --- OPPORTUNITIES ---
+suggestions=[]
+for _,r in df.iterrows():
+    min_a,max_a=extract_min_max(r["Advance Band"])
+    if deal_amount<min_a:
+        suggestions.append(f"Increase £{min_a-deal_amount:,} → access {r['Lender']}")
+    elif deal_amount>max_a:
+        suggestions.append(f"Reduce £{deal_amount-max_a:,} → stay within {r['Lender']}")
 
-# --- CARDS ---
-if not calc.empty:
-    best=calc.iloc[0]
-    low=calc.iloc[calc["APR"].apply(apr_val).idxmin()]
-    c1,c2,c3=st.columns(3)
-    c1.markdown(f"<div class='stat-card best'>Best Commission<br>£{best['Commission']:.0f}</div>",unsafe_allow_html=True)
-    c2.markdown(f"<div class='stat-card apr'>Lowest APR<br>{low['APR']}</div>",unsafe_allow_html=True)
-    c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}</div>",unsafe_allow_html=True)
+if suggestions:
+    st.info("Opportunities:\n"+"\n".join(suggestions[:3]))
 
-# --- NOTES ---
+# --- ORIGINAL NOTES ---
 if not halal_mode:
     st.info("""
 ### ZOPA PCP
@@ -255,12 +209,10 @@ Go Car Credit → Speak to Luke or Ali before payout.
 
 # --- TABLE ---
 st.subheader("Detailed Lender Data")
-
-st.dataframe(
-    calc[["Lender","Rate %","Commission","Comm % of Deal","APR","Extra vs Santander","Missed Profit","Tier","Why","Risk"]]
-    .style.highlight_max(subset=["Commission"], color="lightgreen"),
-    use_container_width=True
-)
+st.dataframe(calc[[
+"Lender","Min Advance","Max Advance","Rate %","Commission","Comm %",
+"APR","Extra vs Santander","Missed Profit","Tier"
+]],use_container_width=True)
 
 fig=px.bar(calc,x="Lender",y="Commission")
 st.plotly_chart(fig,use_container_width=True)

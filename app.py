@@ -73,18 +73,61 @@ term = c4.selectbox("Term (months)",[24,36,48,60])
 halal_mode = c5.checkbox("Halal Finance (Ayan Only)")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- AYAN EXPLANATION ---
+# --- AYAN FULL TRAINING ---
 if halal_mode:
     st.warning("""
-### AYAN – QUICK EXPLANATION
+### AYAN – HOW TO SELL IT
 
-“This is a halal finance option where you rent the car instead of paying interest, and you own it at the end with no big final payment.”
+**One line pitch**
+This is a halal finance option where you rent the car instead of paying interest, and you own it at the end with no big final payment.
 
-Step 1: No interest  
-Step 2: Monthly rental payments  
-Step 3: You own the car at the end  
+---
 
-Use only when customer asks for halal finance.
+### 3 STEP EXPLANATION
+
+Step 1  
+No interest. This is not a loan.
+
+Step 2  
+The finance company buys the car and you pay monthly rental.
+
+Step 3  
+At the end, you own the car. No balloon payment.
+
+---
+
+### COMMON QUESTIONS
+
+Is this 0%  
+No. There is a cost, but it is not interest.
+
+Do I own the car  
+Yes at the end.
+
+Is there a balloon  
+No.
+
+Can I settle early  
+Yes. No penalty.
+
+---
+
+### RULES
+
+Only use if customer asks or clearly wants halal finance  
+Do not compare on APR  
+Do not position as cheaper  
+Do not say it is the same as HP  
+
+---
+
+### COMMISSION
+
+7% commission  
+Debit back applies  
+Early settlement included  
+
+Use correctly. Not for chasing commission.
 """)
 
 # --- FILTER ---
@@ -106,8 +149,12 @@ if halal_mode:
 results=[]
 for _,r in app.iterrows():
     rate = r["Commission %"]
-    try: rate=float(rate)
-    except: rate=0
+
+    if isinstance(rate,str) and f"{product_choice}:" in rate:
+        rate=float(rate.split(f"{product_choice}:")[1].split()[0])
+    else:
+        try: rate=float(rate)
+        except: rate=0
 
     comm=(rate/100)*deal_amount
 
@@ -125,6 +172,10 @@ for _,r in app.iterrows():
 calc=pd.DataFrame(results,columns=["Lender","Rate %","Commission","Comm % of Deal","APR"])
 calc=calc.sort_values("Commission",ascending=False)
 
+def safe_apr(x):
+    try: return float(str(x).split('-')[0])
+    except: return 999
+
 # --- TOP ---
 st.subheader("Top Lenders")
 
@@ -139,38 +190,36 @@ else:
 # --- CARDS ---
 if not calc.empty:
     best=calc.iloc[0]
+    low=calc.iloc[calc["APR"].apply(safe_apr).idxmin()]
     c1,c2,c3=st.columns(3)
     c1.markdown(f"<div class='stat-card best'>Best Commission<br>£{best['Commission']:.0f}</div>",unsafe_allow_html=True)
-    c2.markdown(f"<div class='stat-card apr'>APR<br>{best['APR']}</div>",unsafe_allow_html=True)
+    c2.markdown(f"<div class='stat-card apr'>Lowest APR<br>{low['APR']}</div>",unsafe_allow_html=True)
     c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}</div>",unsafe_allow_html=True)
 
-# --- NOTES ---
-if halal_mode:
-    st.info("""
-### AYAN NOTES
-
-7% commission  
-Debit back applies (early settlement included)
-
-Use only for halal customers  
-Do not position on rate  
-""")
-else:
+# --- ORIGINAL NOTES (UNCHANGED) ---
+if not halal_mode:
     st.info("""
 ### ZOPA PCP
-Prioritised option
+Zopa PCP is prioritised. Often better balloons than Santander.  
+If declined, message Taylor — she may overturn it.
 
 ### ADMIRAL
-36+ months only
+Commission only applies to terms ≥ 36 months.  
+Capped at £2,500 or 50% of interest.
 
 ### JBR
-£40k+ deals
+Strong on £40k+ HP.  
+10% minimum deposit required including products.
 
 ### STARTLINE
-Sub £20k deals
+Use for lower advances under £20k.
 
-### CONTROL
-Go Car & Abound require approval
+### MOTION FINANCE
+Multiple sub-lenders — compare offers carefully.
+
+### ⚠️ MANAGEMENT CONTROL
+ABOUND → Negative equity only. No commission.  
+Go Car Credit → Speak to Luke or Ali before payout.
 """)
 
 # --- TABLE ---

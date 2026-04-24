@@ -15,7 +15,6 @@ h1 {color:#1e3d59;text-align:center;}
 .best {background:#e8f9f0;}
 .apr {background:#e8f1fb;}
 .count {background:#f5e8fb;}
-.warn {background:#fdecea;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -63,7 +62,7 @@ deal_amount = c1.number_input("Advance (£)",0,500000,30000,500)
 product_choice = c2.selectbox("Product",["PCP","HP","LP","Loan"])
 sort_by = c3.selectbox("Sort By",["Highest Commission","Lowest APR"])
 term = c4.selectbox("Term",[24,36,48,60])
-halal_mode = c5.checkbox("Halal Finance")
+halal_mode = c5.checkbox("Halal Finance (Ayan Only)")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -72,33 +71,57 @@ if halal_mode:
     st.warning("""
 ### 🕌 HALAL FINANCE – AYAN
 
-One line:
-Rent instead of interest. You own it at the end. No balloon.
+#### ONE LINE PITCH
+This is a halal finance option where you rent the car instead of paying interest, and you own it at the end with no large final payment.
 
-Steps:
-1. Not a loan, no interest  
-2. Customer pays rental  
-3. Owns car at end  
+---
 
-Customer:
-No balloon  
-No penalty to settle early  
+#### HOW TO EXPLAIN
 
-Rules:
-Only use if asked  
+1. This is not a loan, no interest  
+2. Ayan owns the car, customer pays rental  
+3. Customer owns the car at the end  
+
+---
+
+#### CUSTOMER QUESTIONS
+
+Is this 0%  
+No. There is a cost but not interest  
+
+Do I own the car  
+Yes at the end  
+
+Is there a balloon  
+No  
+
+Can I settle early  
+Yes, no penalty to customer  
+
+---
+
+#### BM RULES
+
+Only use if customer asks  
 Do not compare on APR  
-Do not push for commission  
+Do not say cheaper  
+Do not say same as HP  
 
-Commission:
-7%  
+---
+
+#### COMMISSION + RISK
+
+7% commission  
+Cap £3,000  
+
 Debit back:
-100% 1–3m  
-75% 4–6m  
-50% 7–12m  
-0% after  
+100% months 1–3  
+75% months 4–6  
+50% months 7–12  
+0% after 12  
 
 Customer no penalty  
-Dealer full clawback
+Dealer full clawback exposure
 """)
 
 # --- FILTER ---
@@ -119,7 +142,6 @@ if halal_mode:
 # --- CALC ---
 rows=[]
 for _,r in app.iterrows():
-
     rate=r["Commission %"]
 
     if isinstance(rate,str) and f"{product_choice}:" in rate:
@@ -140,41 +162,41 @@ for _,r in app.iterrows():
 
     rows.append([r["Lender"],rate,comm,r["APR"]])
 
-calc=pd.DataFrame(rows,columns=["Lender","Rate","Commission","APR"])
+calc=pd.DataFrame(rows,columns=["Lender","Rate %","Commission","APR"])
 
-# --- SORT ---
+# --- APR VALUE ---
 def apr_val(x):
     try: return float(str(x).split('-')[0])
     except: return 999
 
+# --- SORT ---
 if sort_by=="Lowest APR":
     calc["APR_val"]=calc["APR"].apply(apr_val)
     calc=calc.sort_values("APR_val")
 else:
     calc=calc.sort_values("Commission",ascending=False)
 
-# --- EXTRA PROFIT ---
+# --- EXTRA ---
 base = calc[calc["Lender"].str.contains("Santander")]["Commission"].max() if not calc.empty else 0
 calc["Extra vs Santander"] = calc["Commission"] - base
+calc["Missed Profit"] = calc["Commission"].max() - calc["Commission"]
 
-# --- MISSED PROFIT ---
-best_comm = calc["Commission"].max() if not calc.empty else 0
-calc["Missed Profit"] = best_comm - calc["Commission"]
+# --- PERCENT ---
+calc["Comm % of Deal"] = (calc["Commission"] / deal_amount) * 100
 
 # --- BADGES ---
 calc["Tier"]="🟡 Backup"
-
 if not calc.empty:
     calc.loc[calc["Commission"].idxmax(),"Tier"]="🥇 Best Profit"
     calc.loc[calc.head(3).index,"Tier"]="🥈 Strong Option"
-    calc.loc[calc["Lender"].str.contains("Ayan"),"Tier"]="🕌 Halal"
+    calc.loc[calc["Lender"].str.contains("Ayan"),"Tier"]="🕌 Halal Finance"
     calc.loc[calc["Lender"].str.contains("Go Car|ABOUND"),"Tier"]="🔴 Risk"
 
-# --- WHY + RISK ---
+# --- INSIGHT ---
 calc["Why"] = calc["Lender"].apply(lambda x:
-    "High profit" if "Santander" in x else
+    "Best profit" if "Santander" in x else
     "Strong PCP" if "ZOPA" in x else
-    "High value deals" if "JBR" in x else
+    "High value HP" if "JBR" in x else
     "Halal only" if "Ayan" in x else
     ""
 )
@@ -210,28 +232,32 @@ if not halal_mode:
     st.info("""
 ### ZOPA PCP
 Zopa PCP is prioritised. Often better balloons than Santander.  
-If declined, message Taylor
+If declined, message Taylor — she may overturn it.
 
 ### ADMIRAL
-36+ months only  
-Capped at £2,500  
+Commission only applies to terms ≥ 36 months.  
+Capped at £2,500 or 50% of interest.
 
 ### JBR
-Strong £40k+  
-10% deposit  
+Strong on £40k+ HP.  
+10% minimum deposit required including products.
 
 ### STARTLINE
-Under £20k  
+Use for lower advances under £20k.
 
-### CONTROL
-Go Car / Abound approval needed
+### MOTION FINANCE
+Multiple sub-lenders — compare offers carefully.
+
+### ⚠️ MANAGEMENT CONTROL
+ABOUND → Negative equity only. No commission.  
+Go Car Credit → Speak to Luke or Ali before payout.
 """)
 
 # --- TABLE ---
-st.subheader("Detailed Data")
+st.subheader("Detailed Lender Data")
 
 st.dataframe(
-    calc[["Lender","Commission","APR","Extra vs Santander","Missed Profit","Tier","Why","Risk"]]
+    calc[["Lender","Rate %","Commission","Comm % of Deal","APR","Extra vs Santander","Missed Profit","Tier","Why","Risk"]]
     .style.highlight_max(subset=["Commission"], color="lightgreen"),
     use_container_width=True
 )

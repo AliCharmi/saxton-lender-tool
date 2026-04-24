@@ -75,7 +75,7 @@ halal_mode = c5.checkbox("Halal Finance (Ayan Only)")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- AYAN NOTES ---
+# --- AYAN FULL NOTES ---
 if halal_mode:
     confirm = st.checkbox("Customer requested halal finance")
 
@@ -86,22 +86,200 @@ if halal_mode:
     st.warning("""
 🕌 HALAL FINANCE – AYAN (IJARA WA IQTINA)
 
-Rental based. No interest. Ownership transfers at end.
+━━━━━━━━━━━━━━━━━━━━━━
+CUSTOMER EXPLANATION
+━━━━━━━━━━━━━━━━━━━━━━
 
-- Ayan owns vehicle
-- Customer pays rental
+- This is NOT a loan
+- Ayan buys the car
+- Customer rents it monthly
+- Ownership transfers at the end
+
+No interest at any stage  
+No balloon payment  
+
+APR shown is only for comparison, not interest :contentReference[oaicite:0]{index=0}
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+HOW THE DEAL WORKS
+━━━━━━━━━━━━━━━━━━━━━━
+
+3 agreements:
+
+1. Request for Ijara  
+   Customer asks Ayan to buy the car  
+
+2. Ijara Agreement  
+   Monthly rental payments  
+   Each payment split between:
+   - rental (profit)
+   - ownership  
+
+3. Sale & Transfer  
+   Ownership transfers at the end for ~£1  
+
+Each payment reduces rental and increases ownership over time :contentReference[oaicite:1]{index=1}
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+KEY CUSTOMER BENEFITS
+━━━━━━━━━━━━━━━━━━━━━━
+
+- No interest (Shariah compliant)  
+- No late fees  
+- No early settlement penalties  
+- No admin fees  
+- Fixed transparent pricing  
+- Can settle early and reduce cost  
+
+Soft credit check first (no impact) :contentReference[oaicite:2]{index=2}  
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+ELIGIBILITY RULES
+━━━━━━━━━━━━━━━━━━━━━━
+
+- £2,000 – £45,000 advance  
+- 12 – 60 months  
+- Min 5% deposit  
+- Employed customers only (PAYE)  
+- Age 21–70 (end of term)  
+- UK resident  
+
+Vehicle:
+
+- Under 70,000 miles  
+- Under 12 years old at end  
+
+:contentReference[oaicite:3]{index=3}
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANT CUSTOMER FACTS
+━━━━━━━━━━━━━━━━━━━━━━
+
+- Ayan owns the car during the term  
+- Customer is registered keeper (V5)  
+- Customer responsible for:
+  - insurance
+  - maintenance
+  - servicing  
+
+Ownership transfers at the end :contentReference[oaicite:4]{index=4}  
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+COMMON OBJECTIONS
+━━━━━━━━━━━━━━━━━━━━━━
+
+"Is this 0%?"
+→ No. There is a rental cost, no interest  
+
+"Is this the same as HP?"
+→ No. It is asset-based rental  
+
+"Why APR?"
+→ Regulatory comparison only  
+
+"Can I settle early?"
+→ Yes, no penalty  
+
+"Do I own the car?"
+→ Yes, at the end  
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+BM RULES
+━━━━━━━━━━━━━━━━━━━━━━
+
+Only use when:
+
+- Customer asks for halal finance  
+- Customer wants no interest  
+
+Do NOT:
+
+- Compare on APR  
+- Say it is cheaper  
+- Say it is same as HP/PCP  
+- Push for commission  
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+COMMISSION + RISK
+━━━━━━━━━━━━━━━━━━━━━━
+
+- 7% commission  
+- £3,000 cap  
+
+Debit back (INCLUDING early settlement):
+
+- 100% → months 1–3  
+- 75% → months 4–6  
+- 50% → months 7–12  
+- 0% → after 12 months  
+
+Customer has no penalty  
+Dealer carries full clawback exposure  
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+PROCESS (IMPORTANT FOR BMs)
+━━━━━━━━━━━━━━━━━━━━━━
+
+- Term selected in iVendi is NOT final  
+- Ayan returns max term after review  
+
+- Quote is indicative  
+- Final rate confirmed after full application  
+
+- “Unknown eligibility” is normal  
+→ Always proceed to application  
+
+- Must show product info to customer (compliance)  
+
+- Commission disclosure must be confirmed  
+
+:contentReference[oaicite:5]{index=5}
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+WHEN TO USE AYAN
+━━━━━━━━━━━━━━━━━━━━━━
+
+Use when:
+
+- Customer specifically requests halal  
+- Customer rejects interest-based finance  
+
+Do NOT lead with it as default
+
+---
+
+━━━━━━━━━━━━━━━━━━━━━━
+KEY DIFFERENCE VS NORMAL FINANCE
+━━━━━━━━━━━━━━━━━━━━━━
+
+HP / PCP:
+- Borrow money
+- Pay interest
+
+Ayan:
+- Rent asset
+- No interest
 - Ownership transfers over time
-- No balloon
-- Early settlement allowed
 
-Commission:
-7% | Cap £3,000
-
-Debit back:
-100% (1–3m)
-75% (4–6m)
-50% (7–12m)
-0% after
+━━━━━━━━━━━━━━━━━━━━━━
 """)
 
 # --- FILTER ---

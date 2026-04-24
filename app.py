@@ -73,61 +73,48 @@ term = c4.selectbox("Term (months)",[24,36,48,60])
 halal_mode = c5.checkbox("Halal Finance (Ayan Only)")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- AYAN FULL TRAINING ---
+# --- AYAN NOTES ---
 if halal_mode:
     st.warning("""
-### AYAN – HOW TO SELL IT
+### CUSTOMER EXPLANATION
 
-**One line pitch**
-This is a halal finance option where you rent the car instead of paying interest, and you own it at the end with no big final payment.
+This is a halal finance option where you rent the car instead of paying interest, and you own it at the end with no large final payment.
 
----
-
-### 3 STEP EXPLANATION
-
-Step 1  
-No interest. This is not a loan.
-
-Step 2  
-The finance company buys the car and you pay monthly rental.
-
-Step 3  
-At the end, you own the car. No balloon payment.
+- Not a loan  
+- No interest  
+- Monthly rental payments  
+- Ownership builds over time  
+- No balloon payment  
+- Can settle early with no penalty  
 
 ---
 
-### COMMON QUESTIONS
+### INTERNAL RULES FOR BMS
 
-Is this 0%  
-No. There is a cost, but it is not interest.
+Only use when:
+- Customer asks for halal finance  
 
-Do I own the car  
-Yes at the end.
-
-Is there a balloon  
-No.
-
-Can I settle early  
-Yes. No penalty.
+Do not:
+- Compare on APR  
+- Say it is cheaper  
+- Say it is the same as HP or PCP  
+- Push for commission  
 
 ---
 
-### RULES
-
-Only use if customer asks or clearly wants halal finance  
-Do not compare on APR  
-Do not position as cheaper  
-Do not say it is the same as HP  
-
----
-
-### COMMISSION
+### COMMISSION AND DEBIT BACK
 
 7% commission  
-Debit back applies  
-Early settlement included  
+Cap £3,000  
 
-Use correctly. Not for chasing commission.
+Debit back:
+- 100% months 1–3  
+- 75% months 4–6  
+- 50% months 7–12  
+- 0% after 12 months  
+
+Customer has no early settlement penalty  
+Dealer has full clawback exposure  
 """)
 
 # --- FILTER ---
@@ -149,12 +136,8 @@ if halal_mode:
 results=[]
 for _,r in app.iterrows():
     rate = r["Commission %"]
-
-    if isinstance(rate,str) and f"{product_choice}:" in rate:
-        rate=float(rate.split(f"{product_choice}:")[1].split()[0])
-    else:
-        try: rate=float(rate)
-        except: rate=0
+    try: rate=float(rate)
+    except: rate=0
 
     comm=(rate/100)*deal_amount
 
@@ -172,13 +155,8 @@ for _,r in app.iterrows():
 calc=pd.DataFrame(results,columns=["Lender","Rate %","Commission","Comm % of Deal","APR"])
 calc=calc.sort_values("Commission",ascending=False)
 
-def safe_apr(x):
-    try: return float(str(x).split('-')[0])
-    except: return 999
-
 # --- TOP ---
 st.subheader("Top Lenders")
-
 if not halal_mode:
     for i,row in calc.head(3).iterrows():
         st.write(f"{i+1}. {row['Lender']} — £{row['Commission']:.0f}")
@@ -187,16 +165,7 @@ else:
         ayan = calc.iloc[0]
         st.write(f"Ayan — £{ayan['Commission']:.0f}")
 
-# --- CARDS ---
-if not calc.empty:
-    best=calc.iloc[0]
-    low=calc.iloc[calc["APR"].apply(safe_apr).idxmin()]
-    c1,c2,c3=st.columns(3)
-    c1.markdown(f"<div class='stat-card best'>Best Commission<br>£{best['Commission']:.0f}</div>",unsafe_allow_html=True)
-    c2.markdown(f"<div class='stat-card apr'>Lowest APR<br>{low['APR']}</div>",unsafe_allow_html=True)
-    c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}</div>",unsafe_allow_html=True)
-
-# --- ORIGINAL NOTES (UNCHANGED) ---
+# --- ORIGINAL NOTES ---
 if not halal_mode:
     st.info("""
 ### ZOPA PCP

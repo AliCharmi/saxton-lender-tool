@@ -40,6 +40,7 @@ data = [
 
     ["Tandem","0-60000","HP","10.9-19.9",7,2000,True],
     ["Admiral","0-60000","HP,PCP","9.9-25.0",7.5,2500,True],
+
     ["Close Brothers", "0-24999", "HP,PCP", 12.9, 7, 3000, True],
     ["Close Brothers", "25000-39999", "HP,PCP", 11.9, 5.5, 3000, True],
     ["Close Brothers", "40000-49999", "HP,PCP", 10.9, 4, 3000, True],
@@ -55,6 +56,9 @@ motion = [
     ["Oodle & Blue (Motion)","All","HP","Rate for risk",3,3000,False],
     ["Go Car Credit (Motion)","All","HP","Rate for risk",0.5,None,False],
     ["ABOUND (Personal Loan)","All","Loan","N/A","No commission",None,False],
+
+    # NEW LENDER
+    ["Ayan (Halal)","2000-45000","HP","7.9-22.0",7,3000,False],
 ]
 
 data.extend(motion)
@@ -84,6 +88,7 @@ app = app[app["Advance Band"].apply(lambda x: band_ok(x,deal_amount))]
 results=[]
 for _,r in app.iterrows():
     rate = r["Commission %"]
+
     if isinstance(rate,str) and f"{product_choice}:" in rate:
         rate=float(rate.split(f"{product_choice}:")[1].split()[0])
     else:
@@ -91,12 +96,15 @@ for _,r in app.iterrows():
         except: rate=0
 
     comm=(rate/100)*deal_amount
+
     if r["Lender"]=="Admiral":
         if term<36: continue
         interest=(rate/100)*deal_amount*(term/12)
         comm=min(comm,interest*0.5)
 
-    if r["Cap"]: comm=min(comm,r["Cap"])
+    if r["Cap"]:
+        comm=min(comm,r["Cap"])
+
     pct=(comm/deal_amount)*100
     results.append([r["Lender"],rate,comm,pct,r["APR"]])
 
@@ -117,6 +125,7 @@ calc["Tier"]="🟡 Backup"
 calc.loc[calc["Commission"].idxmax(),"Tier"]="🥇 Best Profit"
 calc.loc[calc.head(3).index,"Tier"]="🥈 Strong Option"
 calc.loc[calc["Lender"].str.contains("Go Car Credit|ABOUND"),"Tier"]="⚠️ Low Priority"
+calc.loc[calc["Lender"].str.contains("Ayan"),"Tier"]="🕌 Halal Option"
 
 # --- TOP 3 ---
 st.subheader("Top 3 Lenders For This Deal")
@@ -133,6 +142,20 @@ c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}
 
 # --- OPERATIONAL NOTES ---
 st.info("""
+### AYAN (HALAL FINANCE)
+7% commission.  
+Debit back applies:  
+100% months 1–3  
+75% months 4–6  
+50% months 7–12  
+0% after 12 months  
+
+No interest product. Customer pays rental, not interest.  
+No early settlement penalty for customer.  
+
+Use for halal finance customers or where ethics matter.  
+Do not position purely on rate — explain structure.
+
 ### ZOPA PCP
 Zopa PCP is prioritised. Often better balloons than Santander.  
 If declined, message Taylor — she may overturn it.
@@ -161,5 +184,3 @@ st.dataframe(calc,use_container_width=True)
 
 fig=px.bar(calc,x="Lender",y="Commission",color="Commission")
 st.plotly_chart(fig,use_container_width=True)
-
-

@@ -17,7 +17,7 @@ h1 {color:#1e3d59;text-align:center;}
 
 st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
-# --- LENDER DATA ---
+# --- DATA ---
 data = [
     ["Santander","0-24999","HP,LP,PCP",12.9,9.05,None,True],
     ["Santander","25000-39999","HP,LP,PCP",11.9,6.8,None,True],
@@ -45,22 +45,10 @@ data = [
     ["Close Brothers", "25000-39999", "HP,PCP", 11.9, 5.5, 3000, True],
     ["Close Brothers", "40000-49999", "HP,PCP", 10.9, 4, 3000, True],
     ["Close Brothers", "50000-200000", "HP,PCP", 9.9, 3, 3000, True],
-]
-
-motion = [
-    ["Alphera (Motion)","All","HP,PCP",10.9,4.5,3000,False],
-    ["BNP (Motion)","All","HP,PCP",9.9,4.5,3000,False],
-    ["CAAF (Motion)","All","HP,PCP",10.9,4.5,3000,False],
-    ["Close (Motion)","All","HP,PCP",10.9,3.5,3000,False],
-    ["Moto Novo (Motion)","All","HP,PCP",11.9,4.5,3000,False],
-    ["Oodle & Blue (Motion)","All","HP","Rate for risk",3,3000,False],
-    ["Go Car Credit (Motion)","All","HP","Rate for risk",0.5,None,False],
-    ["ABOUND (Personal Loan)","All","Loan","N/A","No commission",None,False],
 
     ["Ayan (Halal)","2000-45000","HP","7.9-22.0",7,3000,False],
 ]
 
-data.extend(motion)
 df = pd.DataFrame(data, columns=["Lender","Advance Band","Products","APR","Commission %","Cap","Favourite"])
 
 # --- INPUTS ---
@@ -77,44 +65,20 @@ st.markdown("</div>", unsafe_allow_html=True)
 if halal_mode:
     st.warning("""
 ### CUSTOMER EXPLANATION
-
 This is a halal finance option where you rent the car instead of paying interest, and you own it at the end with no large final payment.
 
-- Not a loan  
-- No interest  
-- Monthly rental payments  
-- Ownership builds over time  
-- No balloon payment  
-- Can settle early with no penalty  
+### INTERNAL RULES
+Only use when customer asks for halal finance  
+Do not compare on APR  
+Do not position as cheaper  
 
----
-
-### INTERNAL RULES FOR BMS
-
-Only use when:
-- Customer asks for halal finance  
-
-Do not:
-- Compare on APR  
-- Say it is cheaper  
-- Say it is the same as HP or PCP  
-- Push for commission  
-
----
-
-### COMMISSION AND DEBIT BACK
-
+### COMMISSION
 7% commission  
-Cap £3,000  
-
 Debit back:
-- 100% months 1–3  
-- 75% months 4–6  
-- 50% months 7–12  
-- 0% after 12 months  
-
-Customer has no early settlement penalty  
-Dealer has full clawback exposure  
+100% 1–3m  
+75% 4–6m  
+50% 7–12m  
+0% after  
 """)
 
 # --- FILTER ---
@@ -129,15 +93,19 @@ app = df[df["Products"].str.contains(product_choice,na=False)]
 app = app[app["Advance Band"].apply(lambda x: band_ok(x,deal_amount))]
 
 if halal_mode:
-    product_choice = "HP"
-    app = app[app["Lender"].str.contains("Ayan")]
+    product_choice="HP"
+    app=app[app["Lender"].str.contains("Ayan")]
 
 # --- CALC ---
 results=[]
 for _,r in app.iterrows():
-    rate = r["Commission %"]
-    try: rate=float(rate)
-    except: rate=0
+    rate=r["Commission %"]
+
+    if isinstance(rate,str) and f"{product_choice}:" in rate:
+        rate=float(rate.split(f"{product_choice}:")[1].split()[0])
+    else:
+        try: rate=float(rate)
+        except: rate=0
 
     comm=(rate/100)*deal_amount
 
@@ -146,24 +114,51 @@ for _,r in app.iterrows():
         interest=(rate/100)*deal_amount*(term/12)
         comm=min(comm,interest*0.5)
 
-    if r["Cap"]:
-        comm=min(comm,r["Cap"])
+    if r["Cap"]: comm=min(comm,r["Cap"])
 
     pct=(comm/deal_amount)*100
     results.append([r["Lender"],rate,comm,pct,r["APR"]])
 
 calc=pd.DataFrame(results,columns=["Lender","Rate %","Commission","Comm % of Deal","APR"])
-calc=calc.sort_values("Commission",ascending=False)
+
+# --- SORT ---
+if sort_by=="Lowest APR":
+    calc["APR_numeric"]=calc["APR"].apply(lambda x: float(str(x).split('-')[0]) if str(x).replace('.','',1).isdigit() else 999)
+    calc=calc.sort_values("APR_numeric")
+else:
+    calc=calc.sort_values("Commission",ascending=False)
+
+# --- EXTRA VS SANTANDER ---
+sant=calc[calc["Lender"].str.contains("Santander")]
+base=sant["Commission"].max() if not sant.empty else 0
+calc["Extra vs Santander"]=calc["Commission"]-base
+
+# --- BADGES ---
+calc["Tier"]="🟡 Backup"
+if not calc.empty:
+    calc.loc[calc["Commission"].idxmax(),"Tier"]="🥇 Best Profit"
+    calc.loc[calc.head(3).index,"Tier"]="🥈 Strong Option"
+    calc.loc[calc["Lender"].str.contains("Go Car Credit|ABOUND"),"Tier"]="⚠️ Low Priority"
+    calc.loc[calc["Lender"].str.contains("Ayan"),"Tier"]="🕌 Halal Finance"
 
 # --- TOP ---
 st.subheader("Top Lenders")
 if not halal_mode:
     for i,row in calc.head(3).iterrows():
-        st.write(f"{i+1}. {row['Lender']} — £{row['Commission']:.0f}")
+        st.write(f"{i+1}. {row['Lender']} — £{row['Commission']:.0f} — {row['Tier']}")
 else:
     if not calc.empty:
-        ayan = calc.iloc[0]
-        st.write(f"Ayan — £{ayan['Commission']:.0f}")
+        row=calc.iloc[0]
+        st.write(f"{row['Tier']} — £{row['Commission']:.0f}")
+
+# --- CARDS ---
+if not calc.empty:
+    best=calc.iloc[0]
+    low=calc.iloc[calc["APR"].apply(lambda x: float(str(x).split('-')[0]) if str(x).replace('.','',1).isdigit() else 999).idxmin()]
+    c1,c2,c3=st.columns(3)
+    c1.markdown(f"<div class='stat-card best'>Best Commission<br>£{best['Commission']:.0f}</div>",unsafe_allow_html=True)
+    c2.markdown(f"<div class='stat-card apr'>Lowest APR<br>{low['APR']}</div>",unsafe_allow_html=True)
+    c3.markdown(f"<div class='stat-card count'>Lenders<br>{calc['Lender'].nunique()}</div>",unsafe_allow_html=True)
 
 # --- ORIGINAL NOTES ---
 if not halal_mode:

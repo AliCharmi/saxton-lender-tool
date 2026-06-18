@@ -42,10 +42,17 @@ data = [
     ["Tandem","0-60000","HP","10.9-19.9",7,2000],
     ["Admiral","0-60000","HP,PCP","9.9-25.0",7.5,2500],
 
-    ["Close Brothers","0-24999","HP,PCP",12.9,7,3000],
-    ["Close Brothers","25000-39999","HP,PCP",11.9,5.5,3000],
-    ["Close Brothers","40000-49999","HP,PCP",10.9,4,3000],
-    ["Close Brothers","50000-200000","HP,PCP",9.9,3,3000],
+    # Close Brothers — vehicles up to 10 years old at inception
+    ["Close Brothers ≤10 yrs","1000-24999","HP,PCP",13.4,7,3000],
+    ["Close Brothers ≤10 yrs","25000-39999","HP,PCP",12.4,5.5,3000],
+    ["Close Brothers ≤10 yrs","40000-49999","HP,PCP",11.4,4,3000],
+    ["Close Brothers ≤10 yrs","50000-200000","HP,PCP",10.4,3,3000],
+
+    # Close Brothers — vehicles over 10 years old at inception
+    ["Close Brothers >10 yrs","1000-24999","HP,PCP",13.4,5.25,3000],
+    ["Close Brothers >10 yrs","25000-39999","HP,PCP",12.4,4.12,3000],
+    ["Close Brothers >10 yrs","40000-49999","HP,PCP",11.4,3,3000],
+    ["Close Brothers >10 yrs","50000-200000","HP,PCP",10.4,2.25,3000],
 
     ["Ayan (Halal)","2000-45000","HP","7.9-22.0",7,3000],
 ]
@@ -66,13 +73,15 @@ df["Min Advance"], df["Max Advance"] = zip(*df["Advance Band"].apply(extract_min
 
 # --- INPUTS ---
 st.markdown("<div class='input-card'>", unsafe_allow_html=True)
-c1,c2,c3,c4,c5 = st.columns(5)
+c1,c2,c3,c4,c5,c6,c7 = st.columns(7)
 
 deal_amount = c1.number_input("Advance (£)",0,500000,30000,500)
 product_choice = c2.selectbox("Product",["PCP","HP","LP","Loan"])
 sort_by = c3.selectbox("Sort By",["Highest Commission","Lowest APR"])
 term = c4.selectbox("Term",[24,36,48,60])
-halal_mode = c5.checkbox("Halal Finance (Ayan Only)")
+vehicle_age = c5.number_input("Vehicle age at inception",0,30,5,1)
+finance_charges = c6.number_input("Finance charges (£)",0,100000,0,100)
+halal_mode = c7.checkbox("Halal Finance (Ayan Only)")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -294,6 +303,12 @@ def band_ok(band,amt):
 app=df[df["Products"].str.contains(product_choice,na=False)]
 app=app[app["Advance Band"].apply(lambda x: band_ok(x,deal_amount))]
 
+# Close Brothers age rule
+if vehicle_age <= 10:
+    app=app[~app["Lender"].eq("Close Brothers >10 yrs")]
+else:
+    app=app[~app["Lender"].eq("Close Brothers ≤10 yrs")]
+
 if halal_mode:
     product_choice="HP"
     app=app[app["Lender"].str.contains("Ayan")]
@@ -316,13 +331,18 @@ for _,r in app.iterrows():
         interest=(rate/100)*deal_amount*(term/12)
         comm=min(comm,interest*0.5)
 
+    if str(r["Lender"]).startswith("Close Brothers"):
+        # Close Brothers cap: maximum commission is £3,000 and 40% of finance charges.
+        # Enter finance charges from the proposal to apply the 40% cap.
+        if finance_charges > 0:
+            comm=min(comm,finance_charges*0.40)
+
     if r["Cap"]:
         comm=min(comm,r["Cap"])
 
-    rows.append([r["Lender"],rate,comm,r["APR"]])
+    rows.append([r["Lender"],rate,comm,r["APR"],r["Min Advance"],r["Max Advance"]])
 
-calc=pd.DataFrame(rows,columns=["Lender","Rate %","Commission","APR"])
-calc=calc.merge(df[["Lender","Min Advance","Max Advance"]],on="Lender",how="left")
+calc=pd.DataFrame(rows,columns=["Lender","Rate %","Commission","APR","Min Advance","Max Advance"])
 
 # --- SORT ---
 def apr_val(x):
@@ -372,6 +392,10 @@ for i,row in calc.head(3).iterrows():
 # --- ORIGINAL NOTES ---
 if not halal_mode:
     st.info("""
+### CLOSE BROTHERS
+Vehicle age at inception controls which Close Brothers commission band is shown.  
+Enter finance charges from the proposal to apply the 40% finance-charge commission cap.
+
 ### ZOPA PCP
 Zopa PCP is prioritised. Often better balloons than Santander.  
 If declined, message Taylor — she may overturn it.

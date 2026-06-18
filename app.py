@@ -19,68 +19,73 @@ st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- DATA ---
 data = [
-    ["Santander","0-24999","HP,LP,PCP",12.9,9.05,None],
-    ["Santander","25000-39999","HP,LP,PCP",11.9,6.8,None],
-    ["Santander","40000-49999","HP,LP,PCP",10.9,5.15,None],
-    ["Santander","50000+","HP,LP,PCP",9.9,4,None],
+    ["Santander", "0-24999", "HP,LP,PCP", 12.9, 9.05, None],
+    ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6.8, None],
+    ["Santander", "40000-49999", "HP,LP,PCP", 10.9, 5.15, None],
+    ["Santander", "50000+", "HP,LP,PCP", 9.9, 4, None],
 
-    ["ZOPA","0-24999","HP,PCP",12.9,"HP:9.15 PCP:11.15",3000],
-    ["ZOPA","25000-32999","HP,PCP",11.9,"HP:7.15 PCP:9.15",3000],
-    ["ZOPA","33000-50000","HP,PCP",10.9,"HP:5.15 PCP:7.15",3000],
+    ["ZOPA", "0-24999", "HP,PCP", 12.9, "HP:9.15 PCP:11.15", 3000],
+    ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000],
+    ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000],
 
-    ["Mann Island","2500-40000+","HP,PCP",10.9,7.2,3000],
+    ["Mann Island", "2500-40000+", "HP,PCP", 10.9, 7.2, 3000],
 
-    ["Startline Low","0-16900","HP,PCP",16.9,5,2000],
-    ["Startline High","0-19900","HP,PCP",19.9,5,1500],
-    
-    ["Marsh","0-30000","HP,PCP","13.9-23.8",8,1500],
-    ["Marsh Low","0-30000","HP,PCP","14.4-23.9",8,1500],
-    ["Marsh High","0-30000","HP,PCP",26.9,8,1500],
+    ["Startline Low", "0-16900", "HP,PCP", 16.9, 5, 2000],
+    ["Startline High", "0-19900", "HP,PCP", 19.9, 5, 1500],
 
-    ["JBR","0-500000","HP,LP",10.9,5.5,None],
+    ["Marsh", "0-30000", "HP,PCP", "13.9-23.8", 8, 1500],
+    ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 8, 1500],
+    ["Marsh High", "0-30000", "HP,PCP", 26.9, 8, 1500],
 
-    ["Tandem","0-60000","HP","10.9-19.9",7,2000],
-    ["Admiral","0-60000","HP,PCP","9.9-25.0",7.5,2500],
+    ["JBR", "0-500000", "HP,LP", 10.9, 5.5, None],
+
+    ["Tandem", "0-60000", "HP", "10.9-19.9", 7, 2000],
+    ["Admiral", "0-60000", "HP,PCP", "9.9-25.0", 7.5, 2500],
 
     # Close Brothers — vehicles up to 10 years old at inception
-    ["Close Brothers ≤10 yrs","1000-24999","HP,PCP",13.4,7,3000],
-    ["Close Brothers ≤10 yrs","25000-39999","HP,PCP",12.4,5.5,3000],
-    ["Close Brothers ≤10 yrs","40000-49999","HP,PCP",11.4,4,3000],
-    ["Close Brothers ≤10 yrs","50000-200000","HP,PCP",10.4,3,3000],
+    ["Close Brothers ≤10 yrs", "1000-24999", "HP,PCP", 13.4, 7, 3000],
+    ["Close Brothers ≤10 yrs", "25000-39999", "HP,PCP", 12.4, 5.5, 3000],
+    ["Close Brothers ≤10 yrs", "40000-49999", "HP,PCP", 11.4, 4, 3000],
+    ["Close Brothers ≤10 yrs", "50000-200000", "HP,PCP", 10.4, 3, 3000],
 
     # Close Brothers — vehicles over 10 years old at inception
-    ["Close Brothers >10 yrs","1000-24999","HP,PCP",13.4,5.25,3000],
-    ["Close Brothers >10 yrs","25000-39999","HP,PCP",12.4,4.12,3000],
-    ["Close Brothers >10 yrs","40000-49999","HP,PCP",11.4,3,3000],
-    ["Close Brothers >10 yrs","50000-200000","HP,PCP",10.4,2.25,3000],
+    ["Close Brothers >10 yrs", "1000-24999", "HP,PCP", 13.4, 5.25, 3000],
+    ["Close Brothers >10 yrs", "25000-39999", "HP,PCP", 12.4, 4.12, 3000],
+    ["Close Brothers >10 yrs", "40000-49999", "HP,PCP", 11.4, 3, 3000],
+    ["Close Brothers >10 yrs", "50000-200000", "HP,PCP", 10.4, 2.25, 3000],
 
-    ["Ayan (Halal)","2000-45000","HP","7.9-22.0",7,3000],
+    ["Ayan (Halal)", "2000-45000", "HP", "7.9-22.0", 7, 3000],
 ]
 
-df = pd.DataFrame(data, columns=["Lender","Advance Band","Products","APR","Commission %","Cap"])
+df = pd.DataFrame(data, columns=["Lender", "Advance Band", "Products", "APR", "Commission %", "Cap"])
 
 # --- MIN/MAX ---
 def extract_min_max(band):
-    band = band.replace(",","")
-    if "All" in band: return 0,999999
+    band = band.replace(",", "")
+
+    if "All" in band:
+        return 0, 999999
+
     if "+" in band:
-        low=int(re.findall(r"\d+",band)[0])
-        return low,999999
-    nums=re.findall(r"\d+",band)
-    return int(nums[0]),int(nums[1])
+        low = int(re.findall(r"\d+", band)[0])
+        return low, 999999
+
+    nums = re.findall(r"\d+", band)
+    return int(nums[0]), int(nums[1])
 
 df["Min Advance"], df["Max Advance"] = zip(*df["Advance Band"].apply(extract_min_max))
 
 # --- INPUTS ---
 st.markdown("<div class='input-card'>", unsafe_allow_html=True)
-c1,c2,c3,c4,c5,c6,c7 = st.columns(7)
 
-deal_amount = c1.number_input("Advance (£)",0,500000,30000,500)
-product_choice = c2.selectbox("Product",["PCP","HP","LP","Loan"])
-sort_by = c3.selectbox("Sort By",["Highest Commission","Lowest APR"])
-term = c4.selectbox("Term",[24,36,48,60])
-vehicle_age = c5.number_input("Vehicle age at inception",0,30,5,1)
-finance_charges = c6.number_input("Finance charges (£)",0,100000,0,100)
+c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
+
+deal_amount = c1.number_input("Advance (£)", 0, 500000, 30000, 500)
+product_choice = c2.selectbox("Product", ["PCP", "HP", "LP", "Loan"])
+sort_by = c3.selectbox("Sort By", ["Highest Commission", "Lowest APR"])
+term = c4.selectbox("Term", [24, 36, 48, 60])
+vehicle_age = c5.number_input("Vehicle age at inception", 0, 30, 5, 1)
+finance_charges = c6.number_input("Finance charges (£)", 0, 100000, 0, 100)
 halal_mode = c7.checkbox("Halal Finance (Ayan Only)")
 
 st.markdown("</div>", unsafe_allow_html=True)
@@ -108,7 +113,7 @@ CUSTOMER EXPLANATION
 No interest at any stage  
 No balloon payment  
 
-APR shown is only for comparison, not interest :contentReference[oaicite:0]{index=0}
+APR shown is only for comparison, not interest.
 
 ---
 
@@ -124,13 +129,13 @@ HOW THE DEAL WORKS
 2. Ijara Agreement  
    Monthly rental payments  
    Each payment split between:
-   - rental (profit)
+   - rental profit
    - ownership  
 
 3. Sale & Transfer  
-   Ownership transfers at the end for ~£1  
+   Ownership transfers at the end for around £1  
 
-Each payment reduces rental and increases ownership over time :contentReference[oaicite:1]{index=1}
+Each payment reduces rental and increases ownership over time.
 
 ---
 
@@ -138,14 +143,14 @@ Each payment reduces rental and increases ownership over time :contentReference[
 KEY CUSTOMER BENEFITS
 ━━━━━━━━━━━━━━━━━━━━━━
 
-- No interest (Shariah compliant)  
-- No late fees  
-- No early settlement penalties  
-- No admin fees  
-- Fixed transparent pricing  
-- Can settle early and reduce cost  
-
-Soft credit check first (no impact) :contentReference[oaicite:2]{index=2}  
+- No interest
+- Shariah compliant
+- No late fees
+- No early settlement penalties
+- No admin fees
+- Fixed transparent pricing
+- Can settle early and reduce cost
+- Soft credit check first
 
 ---
 
@@ -153,19 +158,17 @@ Soft credit check first (no impact) :contentReference[oaicite:2]{index=2}
 ELIGIBILITY RULES
 ━━━━━━━━━━━━━━━━━━━━━━
 
-- £2,000 – £45,000 advance  
-- 12 – 60 months  
-- Min 5% deposit  
-- Employed customers only (PAYE)  
-- Age 21–70 (end of term)  
-- UK resident  
+- £2,000 – £45,000 advance
+- 12 – 60 months
+- Minimum 5% deposit
+- Employed customers only, PAYE
+- Age 21–70 at end of term
+- UK resident
 
 Vehicle:
 
-- Under 70,000 miles  
-- Under 12 years old at end  
-
-:contentReference[oaicite:3]{index=3}
+- Under 70,000 miles
+- Under 12 years old at end
 
 ---
 
@@ -173,14 +176,14 @@ Vehicle:
 IMPORTANT CUSTOMER FACTS
 ━━━━━━━━━━━━━━━━━━━━━━
 
-- Ayan owns the car during the term  
-- Customer is registered keeper (V5)  
-- Customer responsible for:
+- Ayan owns the car during the term
+- Customer is registered keeper on V5
+- Customer is responsible for:
   - insurance
   - maintenance
-  - servicing  
+  - servicing
 
-Ownership transfers at the end :contentReference[oaicite:4]{index=4}  
+Ownership transfers at the end.
 
 ---
 
@@ -189,19 +192,19 @@ COMMON OBJECTIONS
 ━━━━━━━━━━━━━━━━━━━━━━
 
 "Is this 0%?"
-→ No. There is a rental cost, no interest  
+→ No. There is a rental cost, no interest.
 
 "Is this the same as HP?"
-→ No. It is asset-based rental  
+→ No. It is asset-based rental.
 
 "Why APR?"
-→ Regulatory comparison only  
+→ Regulatory comparison only.
 
 "Can I settle early?"
-→ Yes, no penalty  
+→ Yes, no penalty.
 
 "Do I own the car?"
-→ Yes, at the end  
+→ Yes, at the end.
 
 ---
 
@@ -211,15 +214,15 @@ BM RULES
 
 Only use when:
 
-- Customer asks for halal finance  
-- Customer wants no interest  
+- Customer asks for halal finance
+- Customer wants no interest
 
 Do NOT:
 
-- Compare on APR  
-- Say it is cheaper  
-- Say it is same as HP/PCP  
-- Push for commission  
+- Compare on APR
+- Say it is cheaper
+- Say it is same as HP or PCP
+- Push for commission
 
 ---
 
@@ -227,39 +230,33 @@ Do NOT:
 COMMISSION + RISK
 ━━━━━━━━━━━━━━━━━━━━━━
 
-- 7% commission  
-- £3,000 cap  
+- 7% commission
+- £3,000 cap
 
-Debit back (INCLUDING early settlement):
+Debit back, including early settlement:
 
-- 100% → months 1–3  
-- 75% → months 4–6  
-- 50% → months 7–12  
-- 0% → after 12 months  
+- 100% → months 1–3
+- 75% → months 4–6
+- 50% → months 7–12
+- 0% → after 12 months
 
-Customer has no penalty  
-Dealer carries full clawback exposure  
+Customer has no penalty.  
+Dealer carries full clawback exposure.
 
 ---
 
 ━━━━━━━━━━━━━━━━━━━━━━
-PROCESS (IMPORTANT FOR BMs)
+PROCESS FOR BMs
 ━━━━━━━━━━━━━━━━━━━━━━
 
-- Term selected in iVendi is NOT final  
-- Ayan returns max term after review  
-
-- Quote is indicative  
-- Final rate confirmed after full application  
-
-- “Unknown eligibility” is normal  
-→ Always proceed to application  
-
-- Must show product info to customer (compliance)  
-
-- Commission disclosure must be confirmed  
-
-:contentReference[oaicite:5]{index=5}
+- Term selected in iVendi is NOT final
+- Ayan returns max term after review
+- Quote is indicative
+- Final rate confirmed after full application
+- “Unknown eligibility” is normal
+- Always proceed to application
+- Must show product info to customer
+- Commission disclosure must be confirmed
 
 ---
 
@@ -269,10 +266,10 @@ WHEN TO USE AYAN
 
 Use when:
 
-- Customer specifically requests halal  
-- Customer rejects interest-based finance  
+- Customer specifically requests halal
+- Customer rejects interest-based finance
 
-Do NOT lead with it as default
+Do NOT lead with it as default.
 
 ---
 
@@ -281,10 +278,12 @@ KEY DIFFERENCE VS NORMAL FINANCE
 ━━━━━━━━━━━━━━━━━━━━━━
 
 HP / PCP:
+
 - Borrow money
 - Pay interest
 
 Ayan:
+
 - Rent asset
 - No interest
 - Ownership transfers over time
@@ -293,108 +292,161 @@ Ayan:
 """)
 
 # --- FILTER ---
-def band_ok(band,amt):
-    band=band.replace(",","")
-    if "All" in band:return True
-    if "+" in band:return amt>=int(re.findall(r"\d+",band)[0])
-    low,high=re.findall(r"\d+",band)
-    return int(low)<=amt<=int(high)
+def band_ok(band, amt):
+    band = band.replace(",", "")
 
-app=df[df["Products"].str.contains(product_choice,na=False)]
-app=app[app["Advance Band"].apply(lambda x: band_ok(x,deal_amount))]
+    if "All" in band:
+        return True
 
-# Close Brothers age rule
+    if "+" in band:
+        return amt >= int(re.findall(r"\d+", band)[0])
+
+    low, high = re.findall(r"\d+", band)
+    return int(low) <= amt <= int(high)
+
+app = df[df["Products"].str.contains(product_choice, na=False)]
+app = app[app["Advance Band"].apply(lambda x: band_ok(x, deal_amount))]
+
+# Close Brothers vehicle age rule
 if vehicle_age <= 10:
-    app=app[~app["Lender"].eq("Close Brothers >10 yrs")]
+    app = app[~app["Lender"].eq("Close Brothers >10 yrs")]
 else:
-    app=app[~app["Lender"].eq("Close Brothers ≤10 yrs")]
+    app = app[~app["Lender"].eq("Close Brothers ≤10 yrs")]
 
 if halal_mode:
-    product_choice="HP"
-    app=app[app["Lender"].str.contains("Ayan")]
+    product_choice = "HP"
+    app = app[app["Lender"].str.contains("Ayan")]
 
 # --- CALC ---
-rows=[]
-for _,r in app.iterrows():
-    rate=r["Commission %"]
+rows = []
 
-    if isinstance(rate,str) and f"{product_choice}:" in rate:
-        rate=float(rate.split(f"{product_choice}:")[1].split()[0])
+for _, r in app.iterrows():
+    rate = r["Commission %"]
+
+    if isinstance(rate, str) and f"{product_choice}:" in rate:
+        rate = float(rate.split(f"{product_choice}:")[1].split()[0])
     else:
-        try:rate=float(rate)
-        except:rate=0
+        try:
+            rate = float(rate)
+        except:
+            rate = 0
 
-    comm=(rate/100)*deal_amount
+    comm = (rate / 100) * deal_amount
 
-    if r["Lender"]=="Admiral":
-        if term<36:continue
-        interest=(rate/100)*deal_amount*(term/12)
-        comm=min(comm,interest*0.5)
+    # Admiral rule
+    if r["Lender"] == "Admiral":
+        if term < 36:
+            continue
 
+        interest = (rate / 100) * deal_amount * (term / 12)
+        comm = min(comm, interest * 0.5)
+
+    # Close Brothers rules
     if str(r["Lender"]).startswith("Close Brothers"):
-        # Close Brothers cap: maximum commission is £3,000 and 40% of finance charges.
-        # Enter finance charges from the proposal to apply the 40% cap.
+
+        # Minimum term for commission to be payable is 36 months
+        if term < 36:
+            continue
+
+        # Maximum commission is 40% of finance charges
         if finance_charges > 0:
-            comm=min(comm,finance_charges*0.40)
+            comm = min(comm, finance_charges * 0.40)
 
+    # Standard lender cap
     if r["Cap"]:
-        comm=min(comm,r["Cap"])
+        comm = min(comm, r["Cap"])
 
-    rows.append([r["Lender"],rate,comm,r["APR"],r["Min Advance"],r["Max Advance"]])
+    rows.append([
+        r["Lender"],
+        rate,
+        comm,
+        r["APR"],
+        r["Min Advance"],
+        r["Max Advance"]
+    ])
 
-calc=pd.DataFrame(rows,columns=["Lender","Rate %","Commission","APR","Min Advance","Max Advance"])
+calc = pd.DataFrame(
+    rows,
+    columns=["Lender", "Rate %", "Commission", "APR", "Min Advance", "Max Advance"]
+)
 
 # --- SORT ---
 def apr_val(x):
-    try:return float(str(x).split('-')[0])
-    except:return 999
+    try:
+        return float(str(x).split("-")[0])
+    except:
+        return 999
 
-if sort_by=="Lowest APR":
-    calc["APR_val"]=calc["APR"].apply(apr_val)
-    calc=calc.sort_values("APR_val")
-else:
-    calc=calc.sort_values("Commission",ascending=False)
+if not calc.empty:
+    if sort_by == "Lowest APR":
+        calc["APR_val"] = calc["APR"].apply(apr_val)
+        calc = calc.sort_values("APR_val")
+    else:
+        calc = calc.sort_values("Commission", ascending=False)
 
 # --- METRICS ---
-base=calc[calc["Lender"].str.contains("Santander")]["Commission"].max() if not calc.empty else 0
-calc["Extra vs Santander"]=calc["Commission"]-base
-calc["Missed Profit"]=calc["Commission"].max()-calc["Commission"]
-calc["Comm %"]=(calc["Commission"]/deal_amount)*100
+if not calc.empty:
+    base = calc[calc["Lender"].str.contains("Santander")]["Commission"].max()
+
+    if pd.isna(base):
+        base = 0
+
+    calc["Extra vs Santander"] = calc["Commission"] - base
+    calc["Missed Profit"] = calc["Commission"].max() - calc["Commission"]
+    calc["Comm %"] = (calc["Commission"] / deal_amount) * 100
+else:
+    calc["Extra vs Santander"] = []
+    calc["Missed Profit"] = []
+    calc["Comm %"] = []
 
 # --- BADGES ---
-calc["Tier"]="🟡 Backup"
 if not calc.empty:
-    calc.loc[calc["Commission"].idxmax(),"Tier"]="🥇 Best Profit"
-    calc.loc[calc.head(3).index,"Tier"]="🥈 Strong Option"
-    calc.loc[calc["Lender"].str.contains("Ayan"),"Tier"]="🕌 Halal Finance"
+    calc["Tier"] = "🟡 Backup"
+
+    calc.loc[calc["Commission"].idxmax(), "Tier"] = "🥇 Best Profit"
+    calc.loc[calc.head(3).index, "Tier"] = "🥈 Strong Option"
+    calc.loc[calc["Lender"].str.contains("Ayan"), "Tier"] = "🕌 Halal Finance"
+else:
+    calc["Tier"] = []
 
 # --- FORMAT ---
-calc["Min Advance"]=calc["Min Advance"].apply(lambda x:f"£{x:,.0f}")
-calc["Max Advance"]=calc["Max Advance"].apply(lambda x:"No Limit" if x>500000 else f"£{x:,.0f}")
+if not calc.empty:
+    calc["Min Advance"] = calc["Min Advance"].apply(lambda x: f"£{x:,.0f}")
+    calc["Max Advance"] = calc["Max Advance"].apply(
+        lambda x: "No Limit" if x > 500000 else f"£{x:,.0f}"
+    )
 
 # --- BEST MOVE ---
 if not calc.empty:
-    best=calc.iloc[0]
+    best = calc.iloc[0]
     st.success(f"Best move: {best['Lender']} — £{best['Commission']:.0f}")
+else:
+    st.warning("No lender commission available for this deal.")
 
 # --- DEAL HEALTH ---
 if not calc.empty:
-    if calc.iloc[0]["Missed Profit"]>300:
+    if calc.iloc[0]["Missed Profit"] > 300:
         st.error("Deal not optimised")
     else:
         st.success("Deal optimised")
 
 # --- TOP ---
 st.subheader("Top Lenders")
-for i,row in calc.head(3).iterrows():
-    st.write(f"{i+1}. {row['Lender']} — £{row['Commission']:.0f} — {row['Tier']}")
 
-# --- ORIGINAL NOTES ---
+if not calc.empty:
+    for i, row in calc.head(3).iterrows():
+        st.write(f"{i + 1}. {row['Lender']} — £{row['Commission']:.0f} — {row['Tier']}")
+else:
+    st.write("No available lender options for the selected criteria.")
+
+# --- NOTES ---
 if not halal_mode:
     st.info("""
 ### CLOSE BROTHERS
 Vehicle age at inception controls which Close Brothers commission band is shown.  
-Enter finance charges from the proposal to apply the 40% finance-charge commission cap.
+Commission only applies to terms of 36 months or more.  
+Enter finance charges from the proposal to apply the 40% finance-charge commission cap.  
+Maximum commission is £3,000.
 
 ### ZOPA PCP
 Zopa PCP is prioritised. Often better balloons than Santander.  
@@ -421,15 +473,29 @@ Go Car Credit → Speak to Luke or Ali before payout.
 
 # --- TABLE ---
 def highlight_best(s):
-    return ['background-color:#c6f6d5' if v==s.max() else '' for v in s]
+    return ["background-color:#c6f6d5" if v == s.max() else "" for v in s]
 
 st.subheader("Detailed Lender Data")
-st.dataframe(
-    calc[["Lender","Min Advance","Max Advance","Rate %","Commission","Comm %",
-          "APR","Extra vs Santander","Missed Profit","Tier"]]
-    .style.apply(highlight_best,subset=["Commission"]),
-    use_container_width=True
-)
 
-fig=px.bar(calc,x="Lender",y="Commission")
-st.plotly_chart(fig,use_container_width=True)
+if not calc.empty:
+    st.dataframe(
+        calc[[
+            "Lender",
+            "Min Advance",
+            "Max Advance",
+            "Rate %",
+            "Commission",
+            "Comm %",
+            "APR",
+            "Extra vs Santander",
+            "Missed Profit",
+            "Tier"
+        ]]
+        .style.apply(highlight_best, subset=["Commission"]),
+        use_container_width=True
+    )
+
+    fig = px.bar(calc, x="Lender", y="Commission")
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.write("No data to display.")

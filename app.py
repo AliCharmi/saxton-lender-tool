@@ -444,6 +444,14 @@ else:
 # --- NOTES ---
 if not halal_mode:
     st.info("""
+### SANTANDER LUXURY CAR PRODUCT
+Use the Luxury Car Product when any of these brands are proposed:
+
+Ferrari, Lamborghini, McLaren, Aston Martin, Bentley, Rolls-Royce, Pagani, Bugatti, Koenigsegg, Rimac, Automobili Pininfarina, Gordon Murray Automotive, Lucid, Maserati, Mercedes-Maybach, De Tomaso, Czinger, Hennessey, Zenvo, Aspark, SSC and Apollo.
+
+Minimum deposit: 15%.  
+Maximum balloon/GFV: 85% of CAP.
+
 ### CLOSE BROTHERS
 Vehicle age at inception controls which Close Brothers commission band is shown.  
 Commission only applies to terms of 36 months or more.  

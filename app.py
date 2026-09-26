@@ -32,8 +32,8 @@ data = [
     ["Mann Island PCP", "2500-90000", "PCP", 10.9, 7.2, 5000],
     ["Mann Island LP", "2500-150000", "LP", 10.9, 7.2, 5000],
 
-    ["Startline Low", "0-16900", "HP,PCP", 16.9, 5, 2000],
-    ["Startline High", "0-19900", "HP,PCP", 19.9, 5, 1500],
+    ["Startline Low", "0-60000", "HP,PCP", 16.9, 5, 2000],
+    ["Startline High", "0-60000", "HP,PCP", 19.9, 5, 1500],
 
     ["Marsh", "0-30000", "HP,PCP", "13.9-23.8", 8, 1500],
     ["Marsh Low", "0-30000", "HP,PCP", "14.4-23.9", 8, 1500],

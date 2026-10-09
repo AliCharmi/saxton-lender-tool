@@ -19,10 +19,10 @@ st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- DATA ---
 data = [
-    ["Santander", "0-24999", "HP,LP,PCP", 12.9, 9.05, None],
-    ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6.8, None],
-    ["Santander", "40000-49999", "HP,LP,PCP", 10.9, 5.15, None],
-    ["Santander", "50000+", "HP,LP,PCP", 9.9, 4, None],
+    ["Santander", "0-24999", "HP,LP,PCP", 12.9, 8, None],
+    ["Santander", "25000-39999", "HP,LP,PCP", 11.9, 6, None],
+    ["Santander", "40000-49999", "HP,LP,PCP", 10.9, 4, None],
+    ["Santander", "50000+", "HP,LP,PCP", 9.9, 3, None],
 
     ["ZOPA", "0-24999", "HP,PCP", 12.9, "HP:9.15 PCP:11.15", 3000],
     ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000],

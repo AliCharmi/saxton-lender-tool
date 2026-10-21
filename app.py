@@ -19,7 +19,7 @@ st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
 # --- MANN ISLAND UPDATE ---
 st.warning("""
-Mann Island has been removed from this calculator.
+Mann Island is available in this calculator for business finance only.
 
 31 October 2026 is the final date for personal acceptances. Going forward,
 Mann Island will accept business proposals only.
@@ -39,6 +39,10 @@ data = [
     ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000],
     ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000],
 
+
+    ["Mann Island HP (Business only)", "2500+", "HP", 10.9, 7.2, 5000],
+    ["Mann Island PCP (Business only)", "2500-90000", "PCP", 10.9, 7.2, 5000],
+    ["Mann Island LP (Business only)", "2500-150000", "LP", 10.9, 7.2, 5000],
 
     ["Startline Low", "0-60000", "HP,PCP", 16.9, 5, 2000],
     ["Startline High", "0-60000", "HP,PCP", 19.9, 5, 1500],
@@ -89,6 +93,8 @@ df["Min Advance"], df["Max Advance"] = zip(*df["Advance Band"].apply(extract_min
 st.markdown("<div class='input-card'>", unsafe_allow_html=True)
 
 c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
+
+customer_type = st.selectbox("Finance type", ["Personal", "Business"])
 
 deal_amount = c1.number_input("Advance (£)", 0, 500000, 30000, 500)
 product_choice = c2.selectbox("Product", ["PCP", "HP", "LP", "Loan"])
@@ -316,6 +322,10 @@ def band_ok(band, amt):
 
 app = df[df["Products"].str.contains(product_choice, na=False)]
 app = app[app["Advance Band"].apply(lambda x: band_ok(x, deal_amount))]
+
+# Mann Island is restricted to business finance.
+if customer_type == "Personal":
+    app = app[~app["Lender"].str.startswith("Mann Island")]
 
 # Close Brothers vehicle age rule
 if vehicle_age <= 10:

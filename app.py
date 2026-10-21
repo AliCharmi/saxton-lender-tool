@@ -95,6 +95,12 @@ st.markdown("<div class='input-card'>", unsafe_allow_html=True)
 c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
 
 customer_type = st.selectbox("Finance type", ["Personal", "Business"])
+if customer_type == "Business":
+    st.info(
+        "Business finance: Santander and Mann Island use the existing calculator terms. "
+        "Motion also accepts business proposals. Motion rates and commission are not "
+        "configured in this calculator; confirm the relevant sub-lender offer directly."
+    )
 
 deal_amount = c1.number_input("Advance (£)", 0, 500000, 30000, 500)
 product_choice = c2.selectbox("Product", ["PCP", "HP", "LP", "Loan"])
@@ -326,6 +332,10 @@ app = app[app["Advance Band"].apply(lambda x: band_ok(x, deal_amount))]
 # Mann Island is restricted to business finance.
 if customer_type == "Personal":
     app = app[~app["Lender"].str.startswith("Mann Island")]
+else:
+    # Confirmed business lenders with configured calculator terms.
+    # Motion is shown in the notice because no calculation terms are configured.
+    app = app[app["Lender"].str.startswith(("Santander", "Mann Island"))]
 
 # Close Brothers vehicle age rule
 if vehicle_age <= 10:
@@ -492,7 +502,9 @@ Strong on £40k+ HP.
 Use for lower advances under £20k.
 
 ### MOTION FINANCE
+Accepts personal and business finance on the same terms.
 Multiple sub-lenders — compare offers carefully.
+Rates and commission are not configured in this calculator; confirm the sub-lender offer directly.
 
 ### ⚠️ MANAGEMENT CONTROL
 ABOUND → Negative equity only. No commission.  

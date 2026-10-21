@@ -17,6 +17,17 @@ h1 {color:#1e3d59;text-align:center;}
 
 st.markdown("<h1>Saxtons Lender Commission Tool</h1>", unsafe_allow_html=True)
 
+# --- MANN ISLAND UPDATE ---
+st.warning("""
+Mann Island has been removed from this calculator.
+
+31 October 2026 is the final date for personal acceptances. Going forward,
+Mann Island will accept business proposals only.
+
+From 31 October 2026, personal applications awaiting payout cannot be amended.
+Check and finalise any required amendments before that date.
+""")
+
 # --- DATA ---
 data = [
     ["Santander", "0-24999", "HP,LP,PCP", 12.9, 8, None],
@@ -28,9 +39,6 @@ data = [
     ["ZOPA", "25000-32999", "HP,PCP", 11.9, "HP:7.15 PCP:9.15", 3000],
     ["ZOPA", "33000-50000", "HP,PCP", 10.9, "HP:5.15 PCP:7.15", 3000],
 
-    ["Mann Island HP", "2500+", "HP", 10.9, 7.2, 5000],
-    ["Mann Island PCP", "2500-90000", "PCP", 10.9, 7.2, 5000],
-    ["Mann Island LP", "2500-150000", "LP", 10.9, 7.2, 5000],
 
     ["Startline Low", "0-60000", "HP,PCP", 16.9, 5, 2000],
     ["Startline High", "0-60000", "HP,PCP", 19.9, 5, 1500],

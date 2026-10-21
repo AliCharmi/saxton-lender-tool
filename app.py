@@ -97,7 +97,7 @@ c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
 customer_type = st.selectbox("Finance type", ["Personal", "Business"])
 if customer_type == "Business":
     st.info(
-        "Business finance: Santander and Mann Island use the existing calculator terms. "
+        "Business finance: Santander, Mann Island and JBR use the existing calculator terms. "
         "Motion also accepts business proposals. Motion rates and commission are not "
         "configured in this calculator; confirm the relevant sub-lender offer directly."
     )
@@ -335,7 +335,7 @@ if customer_type == "Personal":
 else:
     # Confirmed business lenders with configured calculator terms.
     # Motion is shown in the notice because no calculation terms are configured.
-    app = app[app["Lender"].str.startswith(("Santander", "Mann Island"))]
+    app = app[app["Lender"].str.startswith(("Santander", "Mann Island", "JBR"))]
 
 # Close Brothers vehicle age rule
 if vehicle_age <= 10:
@@ -495,6 +495,7 @@ Commission only applies to terms ≥ 36 months.
 Capped at £2,500 or 50% of interest.
 
 ### JBR
+Available for personal and business finance on the same terms.
 Strong on £40k+ HP.  
 10% minimum deposit required including products.
 

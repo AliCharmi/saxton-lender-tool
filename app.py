@@ -503,6 +503,8 @@ Strong on £40k+ HP.
 Use for lower advances under £20k.
 
 ### MOTION FINANCE
+If an acceptance comes through Motion from Paragon, Close Asset or Lendable, always send it to Forza.
+
 Accepts personal and business finance on the same terms.
 Multiple sub-lenders — compare offers carefully.
 Rates and commission are not configured in this calculator; confirm the sub-lender offer directly.
